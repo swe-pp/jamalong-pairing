@@ -164,7 +164,7 @@ select.roleinput{border:1px solid var(--line);border-radius:8px;padding:.3rem .5
       <li>Check the genders it guessed</li>
       <li>Opposite gender duets only, nobody paired twice</li>
       <li>Pair with and don't pair with requests are honored</li>
-      <li>Every team member sings at least one duet, no upper limit</li>
+      <li>Every team member sings at least two duets, no upper limit</li>
     </ul>
   </div>
 </header>
@@ -223,7 +223,7 @@ select.roleinput{border:1px solid var(--line);border-radius:8px;padding:.3rem .5
 
   <section class="panel" id="p2" hidden>
     <div class="step"><span class="n">3</span><h2>Pair everyone</h2></div>
-    <p class="lede">Requested pairs go in first, then every team member gets at least one duet. Registrants are matched to each other next, opposite gender only, and anyone still short is matched with a team member.</p>
+    <p class="lede">Requested pairs go in first, then every team member gets at least two duets. Registrants are matched to each other next, opposite gender only, and anyone still short is matched with a team member.</p>
     <div class="row">
       <button class="btn primary" id="go">Pair singers</button>
       <button class="btn" id="again" hidden>Shuffle</button>
@@ -512,22 +512,26 @@ function solveTwoPhase(P,seed){
     else if(!preSet.has(key(x.a,x.b))) add(x.a,x.b,'req');
   });
 
-  // Phase 0b: every team member gets at least one duet
+  // Phase 0b: every team member gets at least TEAM_MIN duets
+  const TEAM_MIN=2;
   const teamIdx=P.map((p,i)=>i).filter(i=>P[i].role==='team');
   const regOpts=t=>P.map((p,j)=>j).filter(j=>P[j].role==='reg'&&ok(t,j)&&!preSet.has(key(t,j))&&count[j]<cap[j]);
-  teamIdx.filter(t=>count[t]===0).sort((a,b)=>regOpts(a).length-regOpts(b).length||r()-.5).forEach(t=>{
-    if(count[t]>0) return;
-    const opts=regOpts(t);
-    if(!opts.length){
-      prefNotes.push(P[t].g==='U'
-        ? `${P[t].name} (team) has no duet because their gender isn\u2019t set.`
-        : `${P[t].name} (team) has no duet: no opposite-gender registrant had a duet to spare.`);
-      return;
-    }
-    // take from the registrant with the most duets still open, so no one loses much
-    let best=opts[0],bs=null;
-    for(const j of opts){const sc=[cap[j]-count[j],r()];if(!bs||cmp(sc,bs)>0){best=j;bs=sc}}
-    add(t,best,'teammin');
+  const stuck=new Set();
+  for(let round=1;round<=TEAM_MIN;round++){
+    teamIdx.filter(t=>count[t]<round&&!stuck.has(t)).sort((a,b)=>regOpts(a).length-regOpts(b).length||r()-.5).forEach(t=>{
+      if(count[t]>=round) return;
+      const opts=regOpts(t);
+      if(!opts.length){stuck.add(t);return}
+      // take from the registrant with the most duets still open, so no one loses much
+      let best=opts[0],bs=null;
+      for(const j of opts){const sc=[cap[j]-count[j],r()];if(!bs||cmp(sc,bs)>0){best=j;bs=sc}}
+      add(t,best,'teammin');
+    });
+  }
+  stuck.forEach(t=>{
+    prefNotes.push(P[t].g==='U'
+      ? `${P[t].name} (team) has no duets because their gender isn\u2019t set.`
+      : `${P[t].name} (team) only has ${count[t]} of ${TEAM_MIN} duets: no other opposite-gender registrant had a duet to spare.`);
   });
 
   // Phase 1: registrants with each other
@@ -581,7 +585,7 @@ function render(){
   const regs=P.filter(p=>p.role==='reg');
   const req=regs.reduce((a,p)=>a+p.d,0), short=P.filter((p,i)=>p.role==='reg'&&R.rem[i]>0).length;
   const solos=P.reduce((a,p)=>a+p.s,0);
-  const teamAll=P.filter(p=>p.role==='team').length, teamIn=P.filter((p,i)=>p.role==='team'&&partnersOf(i).length>0).length, teamNone=teamIn<teamAll;
+  const teamAll=P.filter(p=>p.role==='team').length, teamIn=P.filter((p,i)=>p.role==='team'&&partnersOf(i).length>=2).length, teamNone=teamIn<teamAll;
   const prefWith=prefs.filter(x=>x.rel==='with').length, prefHit=R.kind.filter(k=>k==='req').length;
   $('#resultLede').textContent=R.unfilled===0?'Every duet request is filled, opposite-gender only, with nobody repeated as a partner.':
     `${R.unfilled} duet ${R.unfilled===1?'slot is':'slots are'} still open across ${short} ${short===1?'person':'people'}. The Singers tab shows who and why.`;
@@ -590,7 +594,7 @@ function render(){
     <div><b>${solos}</b>solos</div>
     <div><b>${R.pairs.length+solos}</b>acts in total</div>
     <div class="${R.unfilled?'bad':'good'}"><b>${req-R.unfilled}/${req}</b>duet slots filled</div>
-    <div class="${teamNone?'bad':'good'}"><b>${teamIn}/${teamAll}</b>team members singing</div>${prefWith?`
+    <div class="${teamNone?'bad':'good'}"><b>${teamIn}/${teamAll}</b>team members with 2+ duets</div>${prefWith?`
     <div class="${prefHit<prefWith?'bad':'good'}"><b>${prefHit}/${prefWith}</b>requested pairs</div>`:''}`;
   $('#prefNotes').innerHTML=R.prefNotes.map(x=>`<div class="note">${esc(x)}</div>`).join('');
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===tab)));
