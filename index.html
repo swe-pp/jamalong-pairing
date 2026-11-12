@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 :root{
   --bg:#FFFDFB; --surface:#FFFFFF; --ink:#2A1A0F; --muted:#8C6F5C; --line:#F3E1CE;
@@ -134,6 +134,16 @@ select.roleinput{border:1px solid var(--line);border-radius:8px;padding:.3rem .5
 .why{color:var(--warn);font-size:.85rem}
 .partners{color:var(--muted)}
 .empty-state{padding:2rem 1rem;text-align:center;color:var(--muted)}
+.round-h{font-size:1.1rem;font-weight:600;margin:1.4rem 0 .7rem;display:flex;gap:.6rem;align-items:baseline}
+.round-h:first-of-type{margin-top:0}
+.sheetname{display:grid;gap:.4rem;margin:0 0 1.2rem;padding:1rem 1.2rem;border:1px solid var(--line);border-radius:14px}
+.sheetname label{font-weight:600}
+.evt{display:flex;flex-wrap:wrap;gap:.8rem}
+.evt input{border:1px solid var(--line);border-radius:10px;padding:.5rem .7rem;background:var(--bg);min-width:0}
+.evt #evPlace{min-width:15rem}
+.evt-name{font-size:.92rem;color:var(--muted)}
+.evt-name b{color:var(--ink);font-weight:600}
+.sheetname input{flex:1;min-width:16rem;border:1px solid var(--line);border-radius:10px;padding:.6rem .8rem;background:var(--bg)}
 .slot-type{font-size:.8rem;padding:.1rem .5rem;border-radius:999px;background:var(--chip);white-space:nowrap}
 [hidden]{display:none!important}
 .prefs{margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid var(--line)}
@@ -165,6 +175,7 @@ select.roleinput{border:1px solid var(--line);border-radius:8px;padding:.3rem .5
       <li>Opposite gender duets only, nobody paired twice</li>
       <li>Pair with and don't pair with requests are honored</li>
       <li>Every team member sings at least two duets, no upper limit</li>
+      <li>Rounds sheet ready: solos in Round 1, duets split between Rounds 2 and 3</li>
     </ul>
   </div>
 </header>
@@ -235,9 +246,23 @@ select.roleinput{border:1px solid var(--line);border-radius:8px;padding:.3rem .5
     <div class="step"><span class="n">4</span><h2>Pairings</h2></div>
     <p class="lede" id="resultLede"></p>
     <div class="summary" id="summary"></div>
+    <div class="sheetname">
+      <div class="evt">
+        <div class="field"><label for="evPlace">Place</label><input type="text" id="evPlace" value="Chennai Saligramam" spellcheck="false"></div>
+        <div class="field"><label for="evDate">Date</label><input type="date" id="evDate"></div>
+        <div class="field"><label for="evTime">Time</label><input type="time" id="evTime" value="13:00" step="900"></div>
+      </div>
+      <input type="hidden" id="sheetName">
+      <div class="evt-name">File name: <b id="evPreview"></b></div>
+      <div class="row">
+        <button class="btn primary" id="sendSheet">Send to Pairing Sheet</button>
+      </div>      <div class="row" id="sentRow" hidden><a id="sentLink" target="_blank" rel="noopener">Open the Pairing Sheet ↗</a></div>
+      <div class="row"><button class="btn small" id="copyRounds">Copy table</button><button class="btn small" id="exportRounds">Download Rounds sheet</button></div>
+    </div>
     <div class="notes" id="prefNotes" style="margin:-.4rem 0 1.2rem"></div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true" data-tab="duets">Duets</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="rounds">Rounds</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="singers">Singers</button>
     </div>
     <div class="toolbar">
@@ -560,6 +585,63 @@ function solveTwoPhase(P,seed){
   });
   return {pairs,kind,rem,unfilled,why,prefNotes};
 }
+
+/* ---------- rounds ---------- */
+// Round 1: every solo. Rounds 2 and 3: each singer's duets split as evenly as possible.
+// Duets are always M-F, so walking alternating trails through the pairs and
+// flipping rounds at each step balances every singer exactly (an odd number of
+// duets ends up as one extra in one round).
+function splitDuets(n,pairs){
+  const adj=Array.from({length:n},()=>[]);
+  pairs.forEach(([a,b],k)=>{adj[a].push(k);adj[b].push(k)});
+  const round=pairs.map(()=>0), ptr=new Array(n).fill(0), left=adj.map(l=>l.length), size={2:0,3:0};
+  const next=v=>{while(ptr[v]<adj[v].length&&round[adj[v][ptr[v]]])ptr[v]++;return ptr[v]<adj[v].length?adj[v][ptr[v]]:-1};
+  const walk=start=>{
+    let v=start, c=size[2]<=size[3]?2:3;   // start in the shorter round to keep 2 and 3 similar in length
+    for(;;){
+      const k=next(v); if(k<0) break;
+      round[k]=c; size[c]++; left[pairs[k][0]]--; left[pairs[k][1]]--;
+      v=pairs[k][0]===v?pairs[k][1]:pairs[k][0]; c=c===2?3:2;
+    }
+  };
+  for(let v=0;v<n;v++) if(left[v]%2===1) walk(v);
+  for(let v=0;v<n;v++) while(left[v]>0) walk(v);
+  return round;
+}
+// Running order inside a round: nobody sings twice in a row if it can be avoided
+// (also across the boundary between rounds). Busiest singers are placed first.
+function sequence(items,last){
+  const rest=items.slice(), out=[], load={};
+  items.forEach(it=>it.forEach(i=>load[i]=(load[i]||0)+1));
+  let prev=new Set(last), clashes=0;
+  while(rest.length){
+    let bi=-1,bs=null;
+    rest.forEach((it,k)=>{
+      const s=[it.some(i=>prev.has(i))?0:1, it.reduce((a,i)=>a+load[i],0)];
+      if(!bs||cmp(s,bs)>0){bi=k;bs=s}
+    });
+    const it=rest.splice(bi,1)[0], b2b=it.some(i=>prev.has(i));
+    if(b2b) clashes++;
+    out.push({who:it,b2b}); it.forEach(i=>load[i]--); prev=new Set(it);
+  }
+  return {acts:out,last:[...prev],clashes};
+}
+function buildRounds(P,pairs){
+  const rd=splitDuets(P.length,pairs);
+  const solos=[]; P.forEach((p,i)=>{for(let k=0;k<p.s;k++) solos.push([i])});
+  const orient=([a,b])=>(P[a].g==='F'&&P[b].g==='M')?[b,a]:[a,b];   // male singer first, like the manual sheet
+  const r2=pairs.filter((_,k)=>rd[k]===2).map(orient), r3=pairs.filter((_,k)=>rd[k]===3).map(orient);
+  const per=P.map(()=>[0,0,0]);
+  solos.forEach(([i])=>per[i][0]++);
+  r2.forEach(p=>p.forEach(i=>per[i][1]++)); r3.forEach(p=>p.forEach(i=>per[i][2]++));
+  let last=[], clashes=0;
+  const rounds=[['Round 1 (Solo)',solos],['Round 2',r2],['Round 3',r3]].map(([label,items])=>{
+    const s=sequence(items,last); last=s.last; clashes+=s.clashes; return {label,acts:s.acts};
+  });
+  return {rounds,clashes,per};
+}
+function actName(who){return who.map(i=>people[i].name).join('<> ')}
+
 let seed=20261009;
 function run(reshuffle){
   if(!people.length) return;
@@ -567,6 +649,7 @@ function run(reshuffle){
   $('#go').disabled=true;$('#goHint').textContent='Pairing…';
   setTimeout(()=>{
     result=solveTwoPhase(people,seed);
+    result.rounds=buildRounds(people,result.pairs);
     $('#go').disabled=false;$('#goHint').textContent='';$('#again').hidden=false;$('#shuffleResult').hidden=false;
     $('#p3').hidden=false;render();
     if(reshuffle) toast('Reshuffled');
@@ -609,17 +692,27 @@ function render(){
       const tag=R.kind[i]==='req'?'requested':(teamSide?'with team':'');
       return `<div class="duet"><span class="no">${i+1}</span><div class="pair">${voice(p[0])}<span class="link" aria-label="with"></span>${voice(p[1])}</div><span class="tag">${tag}</span></div>`}).join('')}</div>`
       :`<div class="empty-state">${R.pairs.length?'No duet matches that name.':'Nobody asked for a duet.'}</div>`;
+  }else if(tab==='rounds'){
+    const RR=R.rounds;
+    const top=`<p class="hint" style="margin:0 0 1rem">All solos are in Round 1. Each singer's duets are split evenly between Rounds 2 and 3. ${RR.clashes?`<span class="why">${RR.clashes} spot${RR.clashes===1?'':'s'} where someone sings twice in a row could not be avoided (marked below).</span>`:'Nobody sings twice in a row.'}</p>`;
+    let slot=0;
+    h=top+RR.rounds.map(rd=>{
+      const acts=rd.acts.map(a=>({a,no:++slot})).filter(o=>o.a.who.some(hit));
+      return `<h3 class="round-h">🔁 ${esc(rd.label)} <span class="hint">${rd.acts.length} ${rd.label.includes('Solo')?'solo':'duet'}${rd.acts.length===1?'':'s'}</span></h3>`+
+        (acts.length?`<div class="duets">${acts.map(({a,no})=>`<div class="duet"><span class="no">${no}</span><div class="pair">${a.who.length===1?voice(a.who[0]):`${voice(a.who[0])}<span class="link" aria-label="with"></span>${voice(a.who[1])}`}</div><span class="tag">${a.b2b?'<span class="why">back to back</span>':''}</span></div>`).join('')}</div>`
+        :`<div class="empty-state">${rd.acts.length?'No act in this round matches that name.':'Nothing in this round.'}</div>`);
+    }).join('');
   }else if(tab==='singers'){
     const only=$('#onlyShort').checked;
     const rows=P.map((p,i)=>({p,i})).filter(o=>hit(o.i)&&(!only||(o.p.role==='reg'&&R.rem[o.i]>0)));
-    h=rows.length?`<div class="tablewrap"><table><thead><tr><th>#</th><th>Singer</th><th>Role</th><th>Duets</th><th>Paired with</th><th>Solos</th></tr></thead><tbody>${rows.map(({p,i})=>{
+    h=rows.length?`<div class="tablewrap"><table><thead><tr><th>#</th><th>Singer</th><th>Role</th><th>Duets</th><th>Paired with</th><th>Solos</th><th>R1 / R2 / R3</th></tr></thead><tbody>${rows.map(({p,i})=>{
       const isReg=p.role==='reg';
       const got=isReg?p.d-R.rem[i]:partnersOf(i).length;
       const shortRow=isReg&&R.rem[i]>0;
       const dots=(isReg&&p.d)?`<span class="dots" aria-hidden="true">${'<span class="dot"></span>'.repeat(got)}${'<span class="dot empty"></span>'.repeat(Math.max(0,R.rem[i]))}</span>`:'';
       return `<tr class="${shortRow?'short':''}"><td>${esc(p.sno)}</td><td style="white-space:nowrap"><span class="g ${p.g}">${p.g==='U'?'?':p.g}</span> ${esc(p.name)}</td><td>${isReg?'Registrant':'<span class="pill">Team</span>'}</td>
       <td style="white-space:nowrap">${dots}${isReg?`${got}/${p.d}`:`${got} (flexible)`}${shortRow?`<div class="why" style="white-space:normal">${esc(R.why[i])}</div>`:''}</td>
-      <td class="partners">${partnersOf(i).map(j=>esc(P[j].name)).join(', ')||'None'}</td><td>${p.s||'0'}</td></tr>`}).join('')}</tbody></table></div>`
+      <td class="partners">${partnersOf(i).map(j=>esc(P[j].name)).join(', ')||'None'}</td><td>${p.s||'0'}</td><td style="white-space:nowrap">${R.rounds.per[i].join(' / ')}</td></tr>`}).join('')}</tbody></table></div>`
       :`<div class="empty-state">${only?'Nobody is short on duets.':'No singer matches that name.'}</div>`;
   }
   $('#view').innerHTML=h;
@@ -656,9 +749,155 @@ $('#export').addEventListener('click',()=>{
   const P=people,R=result;
   const duets=[['Duet #','Singer 1','Gender','Singer 2','Gender','Note']].concat(R.pairs.map((p,i)=>[i+1,P[p[0]].name,P[p[0]].g,P[p[1]].name,P[p[1]].g,R.kind[i]==='req'?'Requested pair':((P[p[0]].role==='team'||P[p[1]].role==='team')?'With team member':'')]));
   const singers=[['S.No','Name','Gender','Role','Duets requested','Duets assigned','Paired with','Solos','Note']].concat(P.map((p,i)=>[p.sno,p.name,p.g,p.role==='reg'?'Registrant':'Team',p.role==='reg'?p.d:'',p.role==='reg'?p.d-R.rem[i]:partnersOf(i).length,partnersOf(i).map(j=>P[j].name).join(', '),p.s,R.why[i]]));
-  const sheets=[['Duets',duets],['Singers',singers]];
+  // Rounds tab, same layout as the manual sheet: round header, then one row per act, SONG left blank to fill in
+  const rounds=[];
+  R.rounds.rounds.forEach((rd,k)=>{
+    if(k) rounds.push(['','']);
+    rounds.push(['🔁 '+rd.label,'SONG']);
+    rd.acts.forEach(a=>rounds.push([actName(a.who),'']));
+  });
+  singers[0].push('Round 1','Round 2','Round 3');
+  P.forEach((p,i)=>singers[i+1].push(...R.rounds.per[i]));
+  const sheets=[['Rounds',rounds],['Duets',duets],['Singers',singers]];
   if(prefs.length) sheets.push(['Preferences',[['Singer','Preference','Singer']].concat(prefs.map(x=>[P[x.a].name,x.rel==='with'?'Pair with':'Don\u2019t pair with',P[x.b].name]))]);
   save('jamalong-pairings.xlsx',workbookBlob(sheets));
+});
+
+/* ---------- Rounds sheet (Drive format) ---------- */
+function ordinal(d){const t=d%100;if(t>=11&&t<=13)return d+'th';return d+({1:'st',2:'nd',3:'rd'}[d%10]||'th')}
+// Event name is built from the Place, Date and Time fields:
+// "Chennai Saligramam on - 15th Nov 2026 @1 pm (IST)"
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function iso(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+(()=>{const d=new Date(); d.setDate(d.getDate()+((7-d.getDay())%7)); $('#evDate').value=iso(d)})();   // coming Sunday (today if it's Sunday)
+function eventName(){
+  const place=$('#evPlace').value.trim()||'Chennai Saligramam';
+  const [y,m,dd]=($('#evDate').value||iso(new Date())).split('-').map(Number);
+  let [h,mi]=($('#evTime').value||'13:00').split(':').map(Number);
+  const ap=h>=12?'pm':'am'; h=h%12||12;
+  return `${place} on - ${ordinal(dd)} ${MONTHS[m-1]} ${y} @${h}${mi?':'+String(mi).padStart(2,'0'):''} ${ap} (IST)`;
+}
+function defaultSheetName(){return eventName()}
+function syncEvent(){const n=eventName(); $('#sheetName').value=n; $('#evPreview').textContent=n}
+['#evPlace','#evDate','#evTime'].forEach(s=>$(s).addEventListener('input',syncEvent));
+syncEvent();
+// "Chennai Saligramam on - 1st Nov 2026 @1 pm (IST)" -> place, date, time for the heading rows
+function parseSheetName(s){
+  const m=s.match(/^\s*(.*?)\s+on\s*-\s*(.*?)\s*@\s*(.*?)\s*(\(IST\))?\s*$/i);
+  return m?{place:m[1],date:m[2],time:m[3]}:null;
+}
+function roundsSheetBlob(name){
+  const P=people,R=result, info=parseSheetName(name);
+  const border={top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}}};
+  const font={name:'Arial',sz:10,color:{rgb:'000000'}};
+  const st={
+    title:{font:{...font,bold:true,sz:12},fill:{fgColor:{rgb:'FF9900'}},alignment:{horizontal:'center',vertical:'center'},border},
+    time:{font:{...font,bold:true},fill:{fgColor:{rgb:'FCE5CD'}},alignment:{horizontal:'center',vertical:'center'},border},
+    head:{font:{...font,bold:true},fill:{fgColor:{rgb:'FFFF00'}},alignment:{horizontal:'center',vertical:'center'},border},
+    cell:{font,alignment:{vertical:'center'},border},
+    act:{font:{...font,bold:true},fill:{fgColor:{rgb:'00FF00'}},alignment:{vertical:'center'},border}   // name + song cells
+  };
+  const rows=[], styles=[], merges=[];
+  const push=(vals,s)=>{rows.push(vals);styles.push(s)};
+  const title=info?`PP JAMMING - ${info.place.toUpperCase()} ${info.date}`:`PP JAMMING - ${name}`;
+  push([title,'','','',''],'title'); merges.push({s:{r:0,c:0},e:{r:0,c:4}});
+  push([`⏰ Time (${info?info.time.toUpperCase():''})`,'','','',''],'time'); merges.push({s:{r:1,c:0},e:{r:1,c:4}});
+  R.rounds.rounds.forEach((rd,k)=>{
+    push(['🔁 '+rd.label,'SONG','','','TRACK NAME'],'head');
+    rd.acts.forEach(a=>push([actName(a.who),'','','',''],'act'));
+    for(let b=0;b<(k===0?2:1)&&k<2;b++) push(['','','','',''],'cell');   // spacer rows like the Drive sheet
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  rows.forEach((r,ri)=>r.forEach((_,ci)=>{
+    const ref=XLSX.utils.encode_cell({r:ri,c:ci});
+    if(!ws[ref]) ws[ref]={t:'s',v:''};
+    ws[ref].s=(styles[ri]==='act'&&ci>1)?st.cell:st[styles[ri]];   // green only on name + song, like the Drive sheet
+    if(ri<2&&ci>0){ws[ref].t='z';delete ws[ref].v}                    // title + time rows: covered cells hold nothing, so the merge shows everywhere
+  }));
+  ws['!merges']=merges;
+  ws['!cols']=[{wch:28},{wch:32},{wch:6},{wch:10},{wch:30}];
+  ws['!rows']=rows.map((_,i)=>({hpt:i<2?22:18}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Rounds');
+  return new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array',sheetStubs:true})]);
+}
+// Copy the Rounds sheet as a formatted table: pasting into Excel for the web (SharePoint)
+// keeps the colours, bold text and merged heading rows, so no download or upload is needed.
+function roundsHTML(name){
+  const info=parseSheetName(name);
+  const b='border:1px solid #000;font-family:Arial;font-size:10pt;color:#000;';
+  const td=(v,css,extra='')=>`<td ${extra} style="${b}${css}">${esc(v)}</td>`;
+  const center='text-align:center;font-weight:bold;';
+  let h=`<table style="border-collapse:collapse"><colgroup><col width="200"><col width="230"><col width="45"><col width="70"><col width="215"></colgroup>`;
+  h+=`<tr>${td(info?`PP JAMMING - ${info.place.toUpperCase()} ${info.date}`:`PP JAMMING - ${name}`,center+'background:#FF9900;font-size:12pt;','colspan="5"')}</tr>`;
+  h+=`<tr>${td(`⏰ Time (${info?info.time.toUpperCase():''})`,center+'background:#FCE5CD;','colspan="5"')}</tr>`;
+  const blank=`<tr>${td('','')}${td('','')}${td('','')}${td('','')}${td('','')}</tr>`;
+  result.rounds.rounds.forEach((rd,k)=>{
+    const y=center+'background:#FFFF00;';
+    h+=`<tr>${td('🔁 '+rd.label,y)}${td('SONG',y)}${td('',y)}${td('',y)}${td('TRACK NAME',y)}</tr>`;
+    rd.acts.forEach(a=>{const g='font-weight:bold;background:#00FF00;';h+=`<tr>${td(actName(a.who),g)}${td('',g)}${td('','')}${td('','')}${td('','')}</tr>`});
+    if(k===0) h+=blank+blank; else if(k===1) h+=blank;
+  });
+  return h+'</table>';
+}
+function roundsTSV(name){
+  const info=parseSheetName(name), L=[];
+  L.push(info?`PP JAMMING - ${info.place.toUpperCase()} ${info.date}`:`PP JAMMING - ${name}`);
+  L.push(`⏰ Time (${info?info.time.toUpperCase():''})`);
+  result.rounds.rounds.forEach((rd,k)=>{
+    L.push(`🔁 ${rd.label}\tSONG\t\t\tTRACK NAME`);
+    rd.acts.forEach(a=>L.push(actName(a.who)));
+    if(k===0) L.push('',''); else if(k===1) L.push('');
+  });
+  return L.join('\n');
+}
+$('#copyRounds').addEventListener('click',async()=>{
+  if(!result) return;
+  const name=$('#sheetName').value.trim()||defaultSheetName(), html=roundsHTML(name), text=roundsTSV(name);
+  const done=()=>toast('Copied. Open the sheet, click cell A1 and paste.');
+  try{
+    await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);
+    return done();
+  }catch(e){}
+  // older browsers: select a hidden copy of the table and copy it
+  try{
+    const box=document.createElement('div'); box.contentEditable='true'; box.innerHTML=html;
+    box.style.cssText='position:fixed;left:-9999px;top:0'; document.body.appendChild(box);
+    const range=document.createRange(); range.selectNodeContents(box);
+    const sel=getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    const ok=document.execCommand('copy'); sel.removeAllRanges(); box.remove();
+    ok?done():toast('Copy did not work here. Use Download Rounds sheet instead.');
+  }catch(e){toast('Copy did not work here. Use Download Rounds sheet instead.')}
+});
+
+/* ---------- send straight to the Google Sheet (PAIRING SHEET tab) ---------- */
+// Paste the web app URL from the Apps Script deployment here (ends in /exec).
+const SHEET_ENDPOINT='https://script.google.com/macros/s/AKfycbxrN-qTM6VG7bJ3IJsRpk8JRjq88061hW8AGCU_MpSqTUTiUkZ83EbCL2U0A2406LCd/exec';
+const SHEET_KEY='jamalong-2026';   // must match KEY in the Apps Script
+$('#sendSheet').addEventListener('click',async()=>{
+  if(!result) return;
+  if(!SHEET_ENDPOINT){toast('The Pairing Sheet link is not set up yet.');return}
+  const name=$('#sheetName').value.trim()||defaultSheetName(), info=parseSheetName(name);
+  const payload={key:SHEET_KEY,name,
+    title:info?`PP JAMMING - ${info.place.toUpperCase()} ${info.date}`:`PP JAMMING - ${name}`,
+    time:`⏰ Time (${info?info.time.toUpperCase():''})`,
+    rounds:result.rounds.rounds.map(rd=>({label:rd.label,acts:rd.acts.map(a=>actName(a.who))}))};
+  const btn=$('#sendSheet'); btn.disabled=true; btn.textContent='Sending…';
+  try{
+    const res=await fetch(SHEET_ENDPOINT,{method:'POST',body:JSON.stringify(payload)});   // plain-text body: no CORS preflight
+    const out=await res.json();
+    if(!out.ok) throw new Error(out.error||'failed');
+    $('#sentLink').href=out.url; $('#sentRow').hidden=false;
+    toast('Pairing Sheet updated');
+  }catch(e){toast('Could not reach the Pairing Sheet. Try again, or use Download.')}
+  finally{btn.disabled=false; btn.textContent='Send to Pairing Sheet'}
+});
+
+$('#exportRounds').addEventListener('click',()=>{
+  if(!result||typeof XLSX==='undefined') return;
+  let name=$('#sheetName').value.trim()||defaultSheetName();
+  const file=name.replace(/[\\/:*?"<>|]/g,'-').replace(/\s+/g,' ')+'.xlsx';
+  save(file,roundsSheetBlob(name));
 });
 
 /* ---------- capabilities ---------- */
