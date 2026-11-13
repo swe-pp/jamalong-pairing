@@ -1,911 +1,517 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Jamalong Pairing</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PP Premier League – Singer Auction</title>
 <style>
-:root{
-  --bg:#FFFDFB; --surface:#FFFFFF; --ink:#2A1A0F; --muted:#8C6F5C; --line:#F3E1CE;
-  --stage:#E85D04; --stage-ink:#FFFFFF; --gold:#FF8A3D; --gold-ink:#3A1D00;
-  --m:#C9500B; --m-bg:#FDE6D2; --f:#9A4A1F; --f-bg:#F7E2CC; --team:#7A5A3F; --team-bg:#F1E4D6;
-  --ok:#B14A0A; --warn:#B23A1E; --warn-bg:#FBE4DB; --chip:#FFF1E3;
-  --font:"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#1C1209; --surface:#271A0E; --ink:#FFF3E7; --muted:#C9A98B; --line:#4A3420;
-    --stage:#B84702; --stage-ink:#FFF6EC; --gold:#FF9A50; --gold-ink:#241000;
-    --m:#FF9A50; --m-bg:#3A2411; --f:#F0A26B; --f-bg:#3E2A18; --team:#D8BC98; --team-bg:#3A2C1B;
-    --ok:#FFA55C; --warn:#FF9670; --warn-bg:#3E2313; --chip:#33220F;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#1C1209; --surface:#271A0E; --ink:#FFF3E7; --muted:#C9A98B; --line:#4A3420;
-  --stage:#B84702; --stage-ink:#FFF6EC; --gold:#FF9A50; --gold-ink:#241000;
-  --m:#FF9A50; --m-bg:#3A2411; --f:#F0A26B; --f-bg:#3E2A18; --team:#D8BC98; --team-bg:#3A2C1B;
-  --ok:#FFA55C; --warn:#FF9670; --warn-bg:#3E2313; --chip:#33220F;
-}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*,*::before,*::after{box-sizing:inherit}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
-button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:6px}
-
-.stage{background:var(--stage);color:var(--stage-ink);padding:2.5rem 1.25rem 3.5rem;position:relative;overflow:hidden}
-.stage::after{content:"";position:absolute;inset:auto -10% -60% -10%;height:120%;background:radial-gradient(closest-side, color-mix(in srgb, var(--gold) 28%, transparent), transparent);pointer-events:none}
-.stage-in{max-width:1080px;margin:0 auto;position:relative;z-index:1}
-.stage h1{font-size:clamp(2.2rem,6.5vw,4.2rem);line-height:.97;font-weight:800;letter-spacing:-.03em;margin:0 0 .75rem}
-.stage p{max-width:38rem;margin:0;font-size:1.1rem;opacity:.88}
-.stage-list{list-style:none;margin:0;padding:0;max-width:30rem;display:grid;gap:.5rem}
-.stage-list li{font-size:1.05rem;opacity:.92;padding-left:1.4rem;position:relative}
-.stage-list li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:8px;border-radius:50%;background:var(--gold)}
-
-main{max-width:1080px;margin:-2rem auto 4rem;padding:0 1.25rem;position:relative;z-index:2}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:1.5rem;margin-bottom:1.25rem}
-.panel h2{font-size:1.35rem;font-weight:600;margin:0 0 .25rem;letter-spacing:-.01em}
-.step{display:flex;gap:.9rem;align-items:baseline}
-.step .n{flex:none;width:1.9rem;height:1.9rem;border-radius:50%;background:var(--stage);color:var(--gold);display:grid;place-items:center;font-weight:800;font-size:.95rem}
-.lede{color:var(--muted);margin:.1rem 0 1.1rem;max-width:64ch}
-
-.load-grid{display:grid;gap:.9rem}
-.drop{border:2px dashed var(--line);border-radius:14px;padding:1.25rem;text-align:center;cursor:pointer;transition:border-color .15s, background .15s;display:flex;flex-direction:column;justify-content:center}
-.drop:hover,.drop.over{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 8%, transparent)}
-.drop strong{display:block;font-size:1.05rem}
-.drop span{color:var(--muted);font-size:.9rem}
-.drop input{display:none}
-textarea{width:100%;min-height:118px;border:1px solid var(--line);border-radius:12px;padding:.7rem .8rem;background:var(--bg);resize:vertical;font-size:.9rem}
-.row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
-.btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:.55rem 1.05rem;cursor:pointer;font-weight:500;transition:transform .1s}
-.btn:hover{border-color:var(--ink)}
-.btn:active{transform:scale(.97)}
-.btn.primary{background:var(--gold);color:var(--gold-ink);border-color:var(--gold);font-weight:600;padding:.75rem 1.5rem;font-size:1.05rem}
-.btn.primary:disabled{opacity:.45;cursor:not-allowed}
-.btn.small{padding:.35rem .8rem;font-size:.88rem}
-.hint{font-size:.88rem;color:var(--muted)}
-details.cols{margin-top:1rem;font-size:.92rem}
-details.cols summary{cursor:pointer;color:var(--muted)}
-details.cols ul{margin:.5rem 0 0;padding-left:1.1rem}
-details.cols li{margin:.2rem 0}
-code{background:var(--chip);padding:.05rem .35rem;border-radius:5px;font-size:.88em}
-
-.field{display:flex;flex-direction:column;gap:.3rem;max-width:16rem}
-.field label{font-weight:500;font-size:.92rem}
-.field input[type=number]{border:1px solid var(--line);border-radius:10px;padding:.45rem .6rem;background:var(--bg);width:5.5rem}
-
-.notes{margin-top:1rem;display:grid;gap:.4rem}
-.note{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:.5rem .8rem;font-size:.9rem}
-.loaded{margin-top:1rem;font-size:.95rem}
-
-.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-bottom:1.2rem}
-.rule label{display:block;font-weight:500;margin-bottom:.3rem}
-.rule input[type=number]{width:5.5rem;border:1px solid var(--line);border-radius:10px;padding:.45rem .6rem;background:var(--bg)}
-.rule .hint{margin-top:.25rem}
-
-.summary{display:flex;flex-wrap:wrap;gap:.6rem 1.6rem;margin:0 0 1.2rem;padding:1rem 1.2rem;background:var(--chip);border-radius:14px}
-.summary div{font-size:.92rem;color:var(--muted)}
-.summary b{display:block;font-size:1.6rem;line-height:1.1;color:var(--ink);font-weight:800}
-.summary .bad b{color:var(--warn)}
-.summary .good b{color:var(--ok)}
-
-.tabs{display:flex;gap:.3rem;border-bottom:1px solid var(--line);margin-bottom:1rem;overflow-x:auto}
-.tab{border:0;background:none;padding:.6rem .9rem;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:3px solid transparent;white-space:nowrap}
-.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--gold)}
-.toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;margin-bottom:.9rem}
-.search{border:1px solid var(--line);border-radius:999px;padding:.45rem .9rem;background:var(--bg);min-width:220px;max-width:100%}
-
-.duets{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.7rem}
-.duet{display:flex;align-items:center;gap:.7rem;padding:.55rem .7rem;border:1px solid var(--line);border-radius:14px}
-.duet .no{font-weight:800;color:var(--muted);width:2.2rem;font-size:.95rem;text-align:right;flex:none}
-.pair{display:flex;align-items:center;flex:1;min-width:0}
-.voice{padding:.3rem .75rem;border-radius:999px;font-weight:600;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48%}
-.voice.M{background:var(--m-bg);color:var(--m)}
-.voice.F{background:var(--f-bg);color:var(--f)}
-.voice.U{background:var(--chip);color:var(--ink)}
-.voice.team{box-shadow:inset 0 0 0 2px var(--team)}
-.link{width:18px;height:2px;background:var(--gold);flex:none;position:relative}
-.link::before,.link::after{content:"";position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--gold)}
-.link::before{left:-4px}.link::after{right:-4px}
-.tag{font-size:.78rem;color:var(--muted);white-space:nowrap}
-
-.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
-table{border-collapse:collapse;width:100%;font-size:.93rem}
-th,td{text-align:left;padding:.55rem .75rem;border-bottom:1px solid var(--line);vertical-align:middle}
-th{font-weight:600;color:var(--muted);background:var(--chip)}
-tr:last-child td{border-bottom:0}
-tr.short td,tr.clash td{background:color-mix(in srgb,var(--warn-bg) 70%, transparent)}
-tr.guess td{background:color-mix(in srgb,var(--gold) 7%, transparent)}
-.g{display:inline-block;width:1.5rem;height:1.5rem;border-radius:50%;text-align:center;line-height:1.5rem;font-weight:700;font-size:.8rem;flex:none}
-.g.M{background:var(--m-bg);color:var(--m)}.g.F{background:var(--f-bg);color:var(--f)}.g.U{background:var(--chip)}
-.pill{display:inline-block;font-size:.76rem;padding:.1rem .5rem;border-radius:999px;background:var(--team-bg);color:var(--team);font-weight:600}
-select.ginput{border:1px solid var(--line);border-radius:8px;padding:.3rem .5rem;background:var(--bg)}
-select.ginput.guess{border-color:var(--gold)}
-input.small-num{width:3.6rem;border:1px solid var(--line);border-radius:8px;padding:.3rem .4rem;background:var(--bg)}
-select.roleinput{border:1px solid var(--line);border-radius:8px;padding:.3rem .5rem;background:var(--bg)}
-.namecell{display:flex;align-items:center;gap:.5rem}
-.dots{display:inline-flex;gap:4px;vertical-align:middle;margin-right:.4rem}
-.dot{width:11px;height:11px;border-radius:50%;background:var(--gold)}
-.dot.empty{background:transparent;border:2px solid var(--warn)}
-.why{color:var(--warn);font-size:.85rem}
-.partners{color:var(--muted)}
-.empty-state{padding:2rem 1rem;text-align:center;color:var(--muted)}
-.round-h{font-size:1.1rem;font-weight:600;margin:1.4rem 0 .7rem;display:flex;gap:.6rem;align-items:baseline}
-.round-h:first-of-type{margin-top:0}
-.sheetname{display:grid;gap:.4rem;margin:0 0 1.2rem;padding:1rem 1.2rem;border:1px solid var(--line);border-radius:14px}
-.sheetname label{font-weight:600}
-.evt{display:flex;flex-wrap:wrap;gap:.8rem}
-.evt input{border:1px solid var(--line);border-radius:10px;padding:.5rem .7rem;background:var(--bg);min-width:0}
-.evt #evPlace{min-width:15rem}
-.evt-name{font-size:.92rem;color:var(--muted)}
-.evt-name b{color:var(--ink);font-weight:600}
-.sheetname input{flex:1;min-width:16rem;border:1px solid var(--line);border-radius:10px;padding:.6rem .8rem;background:var(--bg)}
-.slot-type{font-size:.8rem;padding:.1rem .5rem;border-radius:999px;background:var(--chip);white-space:nowrap}
-[hidden]{display:none!important}
-.prefs{margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid var(--line)}
-.prefs h3{font-size:1.1rem;font-weight:600;margin:0 0 .2rem}
-.pref-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,13rem) minmax(0,1fr) auto;gap:.6rem;align-items:center;margin-top:.8rem}
-.pref-row select{border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem;background:var(--bg);width:100%;min-width:0}
-.pref-row select.rel{font-weight:600;text-align:center}
-.pref-list{list-style:none;margin:.9rem 0 0;padding:0;display:flex;flex-wrap:wrap;gap:.5rem}
-.pref-list li{display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .4rem .35rem .8rem;border-radius:999px;font-size:.92rem;border:1px solid var(--line)}
-.pref-list li.yes{background:color-mix(in srgb,var(--gold) 14%, transparent)}
-.pref-list li.no{background:var(--warn-bg);color:var(--warn)}
-.pref-list li .x{border:0;background:none;cursor:pointer;width:1.6rem;height:1.6rem;border-radius:50%;font-size:1rem;line-height:1;color:inherit}
-.pref-list li .x:hover{background:color-mix(in srgb,var(--ink) 10%, transparent)}
-.pref-list li b{font-weight:600}
-@media (max-width:640px){.pref-row{grid-template-columns:1fr}}
-.toast{position:fixed;left:50%;bottom:calc(1.2rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:.6rem 1rem;border-radius:999px;font-size:.92rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
-.toast.show{opacity:1}
-@media (prefers-reduced-motion: reduce){*{transition:none!important}}
-@media (max-width:560px){.panel{padding:1.1rem}.duets{grid-template-columns:1fr}}
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; margin: 0; padding: 16px; background:#f4f5f7; color:#111; }
+  h1 { font-size: 20px; margin: 0 0 14px; }
+  h2 { font-size: 15px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .5px; color:#444; }
+  .layout { display:grid; grid-template-columns: minmax(0,1fr) 230px; gap:16px; align-items:start; }
+  .card { background:#fff; border:1px solid #d6d8dc; border-radius:8px; padding:16px; }
+  .full { grid-column: 1 / -1; }
+  .lower { display:grid; gap:16px; margin-top:16px; }
+  label { display:block; font-size:12px; color:#555; margin-bottom:4px; font-weight:bold; text-transform:uppercase; }
+  input, select { font-size:16px; padding:8px 10px; border:1px solid #bbb; border-radius:6px; width:100%; }
+  input:disabled, select:disabled { background:#eee; color:#333; }
+  .fields { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-top:12px; }
+  .val { font-size:20px; font-weight:bold; padding:8px 10px; border:1px solid #bbb; border-radius:6px; background:#fafafa; min-height:42px; }
+  .slots { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:16px; }
+  .slot { padding:10px; border:2px solid #d6d8dc; border-radius:8px; }
+  .slot .small { margin-top:6px; }
+  .holder { background:#ffe97a !important; border-color:#e0b800 !important; }
+  .live { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-top:16px; }
+  .live .val { font-size:22px; }
+  .live .big { font-size:28px; color:#0a5c2b; }
+  .btns { margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; }
+  button { font-size:15px; padding:9px 18px; border-radius:6px; border:1px solid #888; background:#fff; cursor:pointer; }
+  #nextBtn { background:#1d4ed8; color:#fff; border-color:#1d4ed8; font-weight:bold; }
+  #soldBtn { background:#15803d; color:#fff; border-color:#15803d; font-weight:bold; }
+  #unsoldBtn { background:#b91c1c; color:#fff; border-color:#b91c1c; }
+  #msg { color:#b30000; font-weight:bold; min-height:20px; margin-top:10px; }
+  .small { font-size:12px; color:#555; }
+  .tablewrap { overflow-x:auto; }
+  table { border-collapse: collapse; width:100%; }
+  th, td { border:1px solid #d0d0d0; padding:6px 8px; text-align:left; font-size:14px; white-space:nowrap; }
+  th { background:#eef0f3; }
+  .num { text-align:right; }
+  .unsold { color:#b30000; font-weight:bold; }
+  #ladderBox { position:sticky; top:16px; max-height:calc(100vh - 32px); overflow-y:auto; padding:12px; }
+  #ladder td, #ladder th { font-size:13px; padding:4px 6px; }
+  .bidhist { margin-top:16px; }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } #ladderBox { position:static; max-height:300px; } }
 </style>
 </head>
 <body>
-<header class="stage">
-  <div class="stage-in">
-    <h1>Jamalong Pairing</h1>
-    <ul class="stage-list">
-      <li>Paste in the names and song choices</li>
-      <li>Check the genders it guessed</li>
-      <li>Opposite gender duets only, nobody paired twice</li>
-      <li>Pair with and don't pair with options are provided</li>
-      <li>Every team member sings at least two duets, no upper limit</li>
-      <li>Rounds sheet: solos in Round 1, duets split between Rounds 2 and 3</li>
-    </ul>
+<h1>PP Premier League – Singer Auction</h1>
+
+<div class="layout">
+  <!-- On the block -->
+  <div class="card">
+    <label for="singerName">Singer name</label>
+    <input id="singerName" list="singerList" placeholder="Start typing a name…" autocomplete="off">
+    <datalist id="singerList"></datalist>
+    <div class="small" id="poolInfo" style="margin-top:4px;"></div>
+
+    <div class="fields">
+      <div><label>Category</label><div class="val" id="catBox">—</div></div>
+      <div><label>Base price</label><div class="val" id="baseBox">—</div></div>
+      <div><label>Membership ID</label><div class="val" id="idBox">—</div></div>
+    </div>
+
+    <div class="slots">
+      <div class="slot" id="slot0box"><label for="slot0">Team 1</label><select id="slot0"></select><div class="small" id="slot0left"></div></div>
+      <div class="slot" id="slot1box"><label for="slot1">Team 2</label><select id="slot1"></select><div class="small" id="slot1left"></div></div>
+    </div>
+
+    <div class="live">
+      <div><label id="priceLabel">Current bid</label><div class="val big" id="livePrice">—</div></div>
+      <div><label>Held by</label><div class="val" id="liveHolder">—</div></div>
+      <div><label>Next bid</label><div class="val" id="liveNext">—</div></div>
+    </div>
+
+    <div id="msg"></div>
+    <div class="btns">
+      <button id="nextBtn">Start bid</button>
+      <button id="soldBtn">Sold</button>
+      <button id="unsoldBtn">Unsold</button>
+      <button id="undoBtn">Undo</button>
+    </div>
+    <div class="small" style="margin-top:6px;">Shortcuts: N or Space = next bid, U = undo</div>
+
+    <div class="bidhist">
+      <h2>Bid history (this singer)</h2>
+      <div class="tablewrap"><table id="bidTable"><thead><tr><th>#</th><th class="num">Price (₹)</th><th>Team 1</th><th>Team 2</th></tr></thead><tbody></tbody></table></div>
+    </div>
   </div>
-</header>
 
-<main>
-  <section class="panel" id="p1">
-    <div class="step"><span class="n">1</span><h2>Load this week's names</h2></div>
-    <p class="lede">Paste the two columns straight from the registration sheet: <b>Name</b> and <b>Song choices</b>.</p>
-    <div class="load-grid">
-      <div>
-        <textarea id="paste" aria-label="Pasted registration rows" placeholder="Name	Song choices&#10;Karthik	4 duets, 1 solo&#10;Priya	2 duets&#10;Arjun	3 duets, 1 solo"></textarea>
-        <div class="row" style="margin-top:.7rem">
-          <div class="field">
-            <label for="teamCount">Last rows that are team members</label>
-            <input type="number" id="teamCount" min="0" max="20" value="4">
-          </div>
-          <div class="hint" style="max-width:16rem">Team members don't get matched with each other. They only step in once everyone else already has a partner.</div>
-        </div>
-        <div class="row" style="margin-top:.7rem">
-          <button class="btn small" id="usePaste">Run</button>
-        </div>
-      </div>
-    </div>
-    <div class="notes" id="notes"></div>
-    <div class="loaded" id="loaded"></div>
-  </section>
+  <!-- Price ladder -->
+  <div class="card" id="ladderBox">
+    <h2>Price ladder</h2>
+    <table id="ladder"><thead><tr><th class="num">Price (₹)</th><th class="num">Step</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
 
-  <section class="panel" id="pr" hidden>
-    <div class="step"><span class="n">2</span><h2>Confirm gender, counts &amp; preferences</h2></div>
-    <p class="lede" id="reviewLede"></p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Name</th><th>Gender</th><th>Duets</th><th>Solos</th><th>Role</th></tr></thead>
-        <tbody id="reviewBody"></tbody>
-      </table>
-    </div>
-    <div class="prefs">
-      <h3>Any preferences?</h3>
-      <p class="lede" style="margin-bottom:0">Some singers want to sing with a particular person, or not with someone. Add each request here and the pairing will follow it.</p>
-      <div class="pref-row">
-        <select id="prefA" aria-label="Singer"></select>
-        <select id="prefRel" class="rel" aria-label="Preference">
-          <option value="with">Pair with</option>
-          <option value="not">Don't pair with</option>
-        </select>
-        <select id="prefB" aria-label="Other singer"></select>
-        <button class="btn" id="prefAdd">Add</button>
-      </div>
-      <ul class="pref-list" id="prefList"></ul>
-    </div>
-    <div class="row" style="margin-top:1.2rem">
-      <button class="btn primary" id="confirmReview">Continue</button>
-      <span class="hint" id="reviewHint"></span>
-    </div>
-  </section>
+<div class="lower">
+  <!-- Team summary -->
+  <div class="card full">
+    <h2>Team summary</h2>
+    <div class="tablewrap"><table id="teamTable" style="width:auto; min-width:60%;"><thead><tr><th>Team</th><th>Captain</th><th class="num">Offline (max 6)</th><th class="num">Online (max 4)</th><th class="num">Bought (excl. captain)</th><th class="num">Total purse (₹)</th><th class="num">Spent (₹)</th><th class="num">Remaining (₹)</th></tr></thead><tbody></tbody></table></div>
+    <div class="small" style="margin-top:6px;">Offline/Online counts include the captain. Remaining = Total purse − Spent.</div>
+  </div>
 
-  <section class="panel" id="p2" hidden>
-    <div class="step"><span class="n">3</span><h2>Pair everyone</h2></div>
-    <p class="lede">Requested pairs go in first, then every team member gets at least two duets. Registrants are matched to each other next, opposite gender only, and anyone still short is matched with a team member.</p>
-    <div class="row">
-      <button class="btn primary" id="go">Pair singers</button>
-      <button class="btn" id="again" hidden>Shuffle</button>
-      <span class="hint" id="goHint"></span>
-    </div>
-  </section>
-
-  <section class="panel" id="p3" hidden>
-    <div class="step"><span class="n">4</span><h2>Pairings</h2></div>
-    <p class="lede" id="resultLede"></p>
-    <div class="summary" id="summary"></div>
-    <div class="sheetname">
-      <div class="evt">
-        <div class="field"><label for="evPlace">Place</label><input type="text" id="evPlace" value="Chennai Saligramam" spellcheck="false"></div>
-        <div class="field"><label for="evDate">Date</label><input type="date" id="evDate"></div>
-        <div class="field"><label for="evTime">Time</label><input type="time" id="evTime" value="13:00" step="900"></div>
-      </div>
-      <input type="hidden" id="sheetName">
-      <div class="evt-name">File name: <b id="evPreview"></b></div>
-      <div class="row">
-        <button class="btn primary" id="sendSheet">Send to Pairing Sheet</button>
-      </div>      <div class="row" id="sentRow" hidden><a id="sentLink" target="_blank" rel="noopener">Open the Pairing Sheet ↗</a></div>
-      <div class="row"><button class="btn small" id="copyRounds">Copy table</button><button class="btn small" id="exportRounds">Download Rounds sheet</button></div>
-    </div>
-    <div class="notes" id="prefNotes" style="margin:-.4rem 0 1.2rem"></div>
-    <div class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true" data-tab="duets">Duets</button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="rounds">Rounds</button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="singers">Singers</button>
-    </div>
-    <div class="toolbar">
-      <input class="search" id="q" type="search" placeholder="Find a singer" aria-label="Find a singer">
-      <div class="row">
-        <label class="hint" id="shortWrap" hidden><input type="checkbox" id="onlyShort"> Only people still short</label>
-        <button class="btn small" id="shuffleResult" hidden>Shuffle</button>
-        <button class="btn small" id="export">Download Excel</button>
-      </div>
-    </div>
-    <div id="view"></div>
-  </section>
-</main>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <!-- Sold log -->
+  <div class="card full">
+    <h2>Sold log</h2>
+    <div class="tablewrap"><table id="soldTable"><thead><tr><th>#</th><th>Singer</th><th>ID</th><th>Category</th><th>Country</th><th class="num">Base (₹)</th><th>Team</th><th class="num">Price (₹)</th></tr></thead><tbody></tbody></table></div>
+    <p><button id="reloadSheet">Reload from Google Sheet</button> <button id="resetAuction" style="border-color:#b91c1c;color:#b91c1c;">Reset auction</button> <span class="small" id="sheetInfo"></span></p>
+  </div>
+</div>
 
 <script>
-(function(){
-const $=s=>document.querySelector(s);
-let people=[], notes=[], prefs=[], result=null, tab='duets', downloads=null;
-const smooth=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
+const TOTAL_PURSE = 1323000;
+const CAT_LABEL = { A: 'Offline', B: 'Online' };
+const LIMIT = { A: 6, B: 4 };   // max players each team can buy per category
 
-/* ---------- helpers ---------- */
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2600)}
-function rng(seed){let s=(seed>>>0)||123456789;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296}}
-function cmp(a,b){for(let i=0;i<a.length;i++){if(a[i]!==b[i])return a[i]>b[i]?1:-1}return 0}
+// code, full name, captain, captain value  → auction purse = TOTAL_PURSE - captain value
+const TEAMS = [
+  { code: 'ARR', name: 'Anna Nagar Rhythm Raiders',  captain: 'Dileep',           capValue: 133500 },
+  { code: 'DSP', name: 'Dallas Super Perfomers',     captain: 'Krishnamurthy',    capValue: 64200 },
+  { code: 'KJY', name: 'Kovai Jazzy Yorkers',        captain: 'Saikumar',         capValue: 133500 },
+  { code: 'LRE', name: 'London Royal Entertainers',  captain: 'Lee Chandran',     capValue: 116000 },
+  { code: 'MSV', name: 'Madipakkam Singers Voltz',   captain: 'Sivachandran',     capValue: 133500 },
+  { code: 'PBS', name: 'Pulsating Bangalore Stars',  captain: 'Hariharan',        capValue: 64200 },
+  { code: 'SPB', name: 'Singapore Power Beats',      captain: 'Avyukth',          capValue: 174000 },
+  { code: 'TMS', name: 'Tune Masters of Saligramam', captain: 'Karthik Shankara', capValue: 178000 },
+];
+TEAMS.forEach(t => { t.purse = TOTAL_PURSE - t.capValue; t.capCat = t.code === 'LRE' ? 'B' : 'A'; });  // captains count toward limits; Lee Chandran is Online, rest Offline
+const teamByCode = Object.fromEntries(TEAMS.map(t => [t.code, t]));
 
-/* ---------- gender inference ---------- */
-const MALE_NAMES=new Set(("karthik arjun vignesh sanjay rahul pradeep gokul ashwin deepak suresh ramesh kumar prasad anand vijay ravi kiran naveen praveen dinesh mahesh ganesh krishna siva shiva murali bala balaji senthil karthikeyan sathish satish manoj sanjeev arun vinoth vinod ajith ajay rajesh sundar sundararajan venkatesh venkat srinivas srinivasan gopal gopinath mohan mohanraj saravanan selvam selva prabhu prabhakar raghav raghavan aravind aravindan hari hariharan naren narendra surya suriya vimal vikram vikas nikhil rohit rohan akash aditya abhishek abhi siddharth sidharth karan varun tarun tanish yogesh yogi jagan jayan jayakumar chandran chandru elango elavarasan ilango kannan kanth kathir kathiresan madhavan manikandan mani murugan muthu muthukumar nataraj natarajan palani palanivel pandi pandian periyasamy rajan rajkumar ranjith sabari sabarish sakthivel shankar shanmugam shanmuga subramani subramanian sudhakar sudhan thiru thirumalai vasanth vasudevan velmurugan vetri vetrivel yuvan yuvaraj dhinesh dhanush kishore kishor lokesh lokeshwar mukesh nithin nitin pavan pranav rithik ritik sabarinathan santhosh santosh sarath sridhar srikanth sudheer tejas vamsi raja rajan devan deva balamurali gnanam gnanasekar kalyan kaushik girish giri harish jeeva jeevan kannadasan lingam moorthy nandakumar padmanabhan raman ramanathan ravindran sathyamoorthy sekar shivakumar sivakumar thangavel thiagarajan vairam vellaiyan vetrichelvan vijayakumar vinayagam vishnu yogaraj sundaram sivanandam chidambaram subramaniam meenakshisundaram balasubramaniam venkataraman gopalakrishnan krishnamurthy annamalai ramalingam periyasamy palaniswamy dhanapal duraisamy ekambaram gurusamy kandasamy loganathan marimuthu nagarajan ottamalai ponnusamy ramanathan sockalingam thangaraj veerasamy velusamy ayyanar chinnasamy elumalai govindasamy jeganathan kaliyaperumal muniyandi nallathambi paramasivam perumal ramaswamy sengottaiyan sivasubramaniam thillainayagam vaithilingam aakash aman anirudh anshul arvind ayush bharath charan chandran deepan dhruv gowtham hariharan harsha iniyan jai jeevanantham kabilan kalidas karthi keshav krish lakshman manikanda mithun naveenkumar niranjan pavithran pon rajeshwar ram raviteja sabarish sanjith sarvesh sathiyan selvakumar shan shanmuganathan shivam sridharan sriram subash sundaresan thamizh thiruvenkatam ugesh vaibhav vasan venkatraman viknesh vishwa vivek yaazhan").split(' '));
-const FEMALE_NAMES=new Set(("priya divya keerthana harini nithya meera shruthi lavanya janani deepa deepika swetha sweta shwetha ramya kavya kavitha kalyani kalpana karthika sangeetha sangeeta sowmya soumya sindhu sindhuja sneha snegha anitha anita aishwarya aishu aarthi arthi bhavani bhavya bhuvana bhuvaneshwari chitra devi devika dhanya dhivya divyabharathi gayathri gayatri gowri gowtami hamsini hasini indira ishwarya jayashree jayanthi kanchana kani keerthi kirthana kirthika lakshmi lakshana madhavi madhumitha malathi malini manasa mathangi meena meenakshi menaka mythili nandhini nandini nila padma parvathi pavithra pooja poornima poorvika poovarasi preethi preetha priyanka radha radhika ranjani rathi renuka revathi roja roshini sahana sahithya sandhya saranya savitha selvi shalini shanthi shanmathi sharmila shivani shobana shreya shruthika shubha sindhuri srividya subha sudha sujatha sumathi suvetha swathi swati tamilarasi thenmozhi uma umadevi usha vaishnavi vaishali valli vandana vani varsha varshini vasanthi vasuki veda vidhya vidya vijaya vimala yamuna yazhini abirami akshaya amirtha ananya anjali anu apoorva archana arundhati aparna bhagya bhairavi brinda chandrika deepthi devanandhini dharani gomathi harshitha ilakkiya jananee jothika kausalya lasya lekha lisha madhulika mahalakshmi mahima nakshatra nayana nirmala nithyashree oviya parimala pavani poornaa priyadarshini raksha ramyasri rekha ritika roopa sathya nila saumya shreya shrutika sudarshini suhasini suja swarnalatha tanvi thulasi vaishnavi vrinda yashaswini").split(' '));
-function inferGender(name){
-  const first=String(name||'').trim().split(/\s+/)[0]||'';
-  const low=first.toLowerCase().replace(/[^a-z]/g,'');
-  if(!low) return {g:'U',guess:true};
-  if(MALE_NAMES.has(low)) return {g:'M',guess:false};
-  if(FEMALE_NAMES.has(low)) return {g:'F',guess:false};
-  if(/(kumar|esh$|raj$|nath$|dev$|an$|ith$|ash$|it$|ik$|th$|endra$|endran$|am$|oo$|u$)$/.test(low)) return {g:'M',guess:true};
-  if(/(itha$|ika$|ini$|priya$|shree$|sri$|dha$|tha$|ya$|ee$|i$|a$)$/.test(low)) return {g:'F',guess:true};
-  return {g:'U',guess:true};
-}
+// Auction pool (captains removed; Subramanian Padmanabhan withdrawn). [membership id, name, country, Offline/Online, base price]
+const PLAYERS = [
+  ['PP250852','A Akshara Ashok','India','Offline',60000],
+  ['PP250968','A.Nithyashree','India','Offline',30000],
+  ['PP240075','Amrita Arvind','India','Online',15000],
+  ['PP240233','Ananthi','India','Offline',20000],
+  ['PP240269','Anbazhagan','India','Offline',30000],
+  ['PP251086','Anitha','India','Offline',15000],
+  ['PP261883','Bala Venkat','Singapore','Online',15000],
+  ['PP240215','Balakumar KS','India','Offline',15000],
+  ['PP240587','Baskar','United Kingdom','Online',30000],
+  ['PP262418','Bharathiraja b','India','Offline',20000],
+  ['PP264229','Deepak Roshan Palani','India','Offline',30000],
+  ['PP240033','Denis Dayal K','United States','Online',20000],
+  ['PP240232','DHANYA MAYURAN','India','Offline',40000],
+  ['PP240370','Dinesh','Singapore','Online',30000],
+  ['PP240291','Divya T S','India','Offline',40000],
+  ['PP240455','Dr Senthil Suthanthirakumar','India','Offline',30000],
+  ['PP240252','Dr Shalini Balachander','United Kingdom','Online',30000],
+  ['PP261393','Gunasekaran','Singapore','Online',20000],
+  ['PP266761','GURUNATHAN GURUKAILASAM','Singapore','Online',15000],
+  ['PP240271','Hari S Padmanabhan','India','Online',30000],
+  ['PP251336','K.Dhansik','India','Offline',20000],
+  ['PP240244','Kannan','India','Offline',15000],
+  ['PP251118','Kannan LS','Singapore','Online',30000],
+  ['PP240243','Karthik Balachandran','India','Online',40000],
+  ['PP265016','Lakshmi','India','Online',30000],
+  ['PP264300','Leeban','India','Offline',30000],
+  ['PP261949','Magdalene Ratna','India','Offline',15000],
+  ['PP240174','Manasa','India','Offline',30000],
+  ['PP240212','Megavarshini','Saudi Arabia','Online',60000],
+  ['PP240003','Muthumeenal Natarajan','India','Online',20000],
+  ['PP251340','Narayani AV','India','Offline',30000],
+  ['PP240280','Narendran','India','Offline',30000],
+  ['PP250690','Pavithra Vijayanand','United States','Online',30000],
+  ['PP240112','Prakash Ramachandran','India','Offline',15000],
+  ['PP250908','Prashanth R','India','Offline',20000],
+  ['PP240342','Preethi Ravichandran','United Kingdom','Online',30000],
+  ['PP240010','R Dharmarajan','India','Offline',30000],
+  ['PP266944','R.Banumathi','India','Offline',15000],
+  ['PP240016','Raghunathan Narasimhan','United States','Online',15000],
+  ['PP240338','Rajambal','United States','Online',60000],
+  ['PP240122','Rajesh Kanna R','India','Offline',30000],
+  ['PP240203','Ramesh Gandhi','India','Offline',30000],
+  ['PP240499','Risika','India','Offline',40000],
+  ['PP240008','Riyaz','India','Offline',40000],
+  ['PP240139','Sai Mahathi','India','Offline',40000],
+  ['PP240151','Santha','Norway','Online',30000],
+  ['PP250993','Saravanakumar G','Singapore','Online',20000],
+  ['PP240107','Satheesh Pachiappan','Australia','Online',40000],
+  ['PP240422','Shanthini Lakshman','United Kingdom','Online',15000],
+  ['PP240236','Sivakumar Sivan','India','Offline',20000],
+  ['PP263342','Sivakumar Venkataraman','India','Online',30000],
+  ['PP240279','Sowmya Sundar','India','Offline',40000],
+  ['PP240138','Sreedevi','United States','Online',110000],
+  ['PP263661','Sreedharen PJ','India','Offline',20000],
+  ['PP240171','Srinaya Nageswar','India','Offline',60000],
+  ['PP251034','Sujatha R','India','Offline',30000],
+  ['PP240173','Sundaram Dandapany','India','Offline',20000],
+  ['PP251024','Suresh Thillai','India','Offline',15000],
+  ['PP265353','Swapna','India','Offline',20000],
+  ['PP240327','T K VASUDEVAN','India','Online',30000],
+  ['PP240226','Tejasvini Nitya Sathish Kumar','Canada','Online',30000],
+  ['PP240263','TTS Lakshmi Narasiman','India','Offline',20000],
+  ['PP264008','Udayshankar Rao KN','India','Online',15000],
+  ['PP240086','Uma Karthik','India','Offline',20000],
+  ['PP240231','Umesh','Singapore','Online',20000],
+  ['PP240349','V. Sriram','India','Offline',15000],
+  ['PP240283','Vasantha Satheesh','India','Online',30000],
+  ['PP240093','Vasanthi sathyanarayanan','India','Online',20000],
+  ['PP265970','VEERARAGHAVAN M G','India','Offline',15000],
+  ['PP262296','Vignesh Sundararaman','Singapore','Online',40000],
+  ['PP250961','Yaagavi S','India','Offline',20000],
+  ['PP266204','Parimala','India','Offline',20000],
+].map(([id, name, country, mode, base]) => ({ id, name, country, cat: mode === 'Offline' ? 'A' : 'B', base }));
+const playerByName = Object.fromEntries(PLAYERS.map(p => [p.name, p]));
 
-/* ---------- column detection ---------- */
-function classify(h){
-  const n=String(h||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
-  if(!n) return null;
-  if(/\bname\b/.test(n)) return 'name';
-  if(/song|choice|selection|preference/.test(n)) return 'song';
-  if(/duet/.test(n)&&/solo/.test(n)) return 'kind';
-  if(/gender|sex/.test(n)) return 'gender';
-  if(/duet/.test(n)) return 'duets';
-  if(/solo/.test(n)) return 'solos';
-  if(/perform|count|number|total|how many|slots|songs/.test(n)) return 'total';
-  if(/^s ?no|^sl|serial|^id$|^no$/.test(n)) return 'sno';
-  return null;
+// Bid increments (from the bid sheet)
+function step(p) {
+  if (p < 20000) return 1000;
+  if (p < 30000) return 2000;
+  if (p < 60000) return 5000;
+  if (p < 110000) return 10000;
+  if (p < 210000) return 20000;
+  if (p < 360000) return 30000;
+  if (p < 560000) return 40000;
+  return 50000;
 }
-function parseGender(v){v=String(v||'').trim().toLowerCase();if(/^(m|male|man|boy|gent)/.test(v))return'M';if(/^(f|female|w|woman|girl|lad)/.test(v))return'F';return'U'}
-function num(v){const n=parseInt(String(v??'').replace(/[^0-9]/g,''),10);return isNaN(n)?0:n}
-function extractCount(s,label){
-  let m=s.match(new RegExp('(\\d+)\\s*'+label));
-  if(m) return parseInt(m[1],10);
-  m=s.match(new RegExp(label+'[^0-9]{0,6}(\\d+)'));
-  if(m) return parseInt(m[1],10);
-  if(new RegExp(label).test(s)) return 1;
-  return 0;
-}
-function parseSongChoices(v){
-  const s=String(v||'').toLowerCase();
-  return {d:extractCount(s,'duets?'), s:extractCount(s,'solos?')};
-}
+const nextPrice = p => p + step(p);
+const fmt = n => n == null ? '—' : '₹' + n.toLocaleString('en-IN');
+const num = n => n.toLocaleString('en-IN');
 
-function fromRows(rows, teamCount){
-  notes=[];
-  rows=rows.filter(r=>r&&r.some(c=>String(c??'').trim()!==''));
-  if(!rows.length){notes.push('No rows found.');return[]}
-  const hi=rows.findIndex(r=>r.filter(c=>classify(c)).length>=1 && r.some(c=>classify(c)==='name'));
-  if(hi<0){notes.push('No header row found. Add a “Name” column (and “Song choices”, or Gender/Duets/Solos).');return[]}
-  const map={};rows[hi].forEach((h,i)=>{const k=classify(h);if(k&&map[k]===undefined)map[k]=i});
-  if(map.name===undefined){notes.push('No Name column found.');return[]}
-  const hasGenderCol=map.gender!==undefined;
-  const dataRows=rows.slice(hi+1).filter(r=>String(r[map.name]??'').trim());
-  const out=[];let splitBoth=0,guesses=0;
-  dataRows.forEach((r,ri)=>{
-    const name=String(r[map.name]??'').trim(); if(!name) return;
-    let g,guess;
-    if(hasGenderCol){const gg=parseGender(r[map.gender]);g=gg;guess=(gg==='U')}
-    else{const inf=inferGender(name);g=inf.g;guess=true}
-    if(guess) guesses++;
-    let d=0,s=0;
-    if(map.duets!==undefined||map.solos!==undefined){
-      d=map.duets!==undefined?num(r[map.duets]):0; s=map.solos!==undefined?num(r[map.solos]):0;
-    }else if(map.song!==undefined){
-      const pc=parseSongChoices(r[map.song]); d=pc.d; s=pc.s;
-    }else if(map.kind!==undefined){
-      const kind=String(r[map.kind]||'').toLowerCase();
-      const tot=map.total!==undefined?num(r[map.total]):1;
-      if(/both/.test(kind)||(/duet/.test(kind)&&/solo/.test(kind))){d=Math.ceil(tot/2);s=Math.floor(tot/2);splitBoth++}
-      else if(/solo/.test(kind)) s=tot; else d=tot;
-    }
-    out.push({id:out.length,sno:map.sno!==undefined?String(r[map.sno]??''):String(out.length+1),name,g,guess,d,s,role:'reg'});
-  });
-  const n=out.length, tc=Math.max(0,Math.min(teamCount||0,n));
-  out.forEach((p,i)=>{ if(i>=n-tc){ p.role='team'; if(!p.d) p.d=99; } });
-  if(splitBoth) notes.push(`${splitBoth} “Both” registrations were split evenly between duets and solos.`);
-  if(!hasGenderCol && guesses) notes.push(`Gender guessed from first names for ${guesses} ${guesses===1?'person':'people'}. Check these in the next step.`);
-  const names={};out.forEach(p=>{const k=p.name.toLowerCase();names[k]=(names[k]||0)+1});
-  const dup=Object.keys(names).filter(k=>names[k]>1);
-  if(dup.length) notes.push(`Repeated names: ${dup.join(', ')}. Treated as different people, so double check if any of these are duplicate rows.`);
-  return out;
-}
+const KEY = 'ppl_auction_v3';
+let S = { typed: '', singer: '', slots: ['', ''], price: null, holder: null, bids: [], sold: [] };
+let history = [];
 
-/* ---------- loading & review ---------- */
-function loadPeople(list){
-  people=list; result=null; prefs=[];
-  $('#pr').hidden=true;$('#p2').hidden=true;$('#p3').hidden=true;$('#again').hidden=true;$('#shuffleResult').hidden=true;
-  $('#notes').innerHTML=notes.map(n=>`<div class="note">${esc(n)}</div>`).join('');
-  if(!people.length){$('#loaded').textContent='';return}
-  const reg=people.filter(p=>p.role==='reg').length, team=people.length-reg;
-  $('#loaded').innerHTML=`<b>${people.length} names loaded.</b> ${reg} registrants${team?`, ${team} team ${team===1?'member':'members'}`:''}.`;
-  buildReview(); buildPrefs();
-  $('#pr').hidden=false;
-  $('#pr').scrollIntoView({behavior:smooth(),block:'start'});
-}
-function buildReview(){
-  $('#reviewLede').textContent='Check the gender first.';
-  $('#reviewBody').innerHTML=people.map((p,i)=>`
-    <tr class="${p.guess?'guess':''}" data-i="${i}">
-      <td class="namecell">${esc(p.name)}${p.guess?'<span class="pill">check</span>':''}</td>
-      <td><select class="ginput ${p.guess?'guess':''}" data-f="g">
-        <option value="M" ${p.g==='M'?'selected':''}>M</option>
-        <option value="F" ${p.g==='F'?'selected':''}>F</option>
-        <option value="U" ${p.g==='U'?'selected':''}>? unknown</option>
-      </select></td>
-      <td><input class="small-num" type="number" min="0" max="20" data-f="d" placeholder="${p.role==='team'&&p.d===99?'Flexible':''}" value="${(p.role==='team'&&p.d===99)?'':p.d}"></td>
-      <td><input class="small-num" type="number" min="0" max="20" data-f="s" value="${p.s}"></td>
-      <td><select class="roleinput" data-f="role">
-        <option value="reg" ${p.role==='reg'?'selected':''}>Registrant</option>
-        <option value="team" ${p.role==='team'?'selected':''}>Team member</option>
-      </select></td>
-    </tr>`).join('');
-  const need=people.filter(p=>p.guess).length;
-  $('#reviewHint').textContent=need?`${need} gender${need===1?'':'s'} still guessed.`:'';
-}
-$('#reviewBody').addEventListener('change',e=>{
-  const tr=e.target.closest('tr'); if(!tr) return;
-  const i=+tr.dataset.i, f=e.target.dataset.f, p=people[i];
-  if(f==='g'){p.g=e.target.value; p.guess=false; e.target.classList.remove('guess'); tr.classList.remove('guess'); tr.querySelector('.pill')?.remove();
-    $('#reviewHint').textContent=(()=>{const n=people.filter(x=>x.guess).length;return n?`${n} gender${n===1?'':'s'} still guessed.`:''})();}
-  else if(f==='d'){ const v=e.target.value.trim(); p.d=(v===''&&p.role==='team')?99:Math.max(0,num(v)); }
-  else if(f==='s') p.s=Math.max(0,num(e.target.value));
-  else if(f==='role'){ p.role=e.target.value; if(p.role==='reg'&&p.d===99) p.d=1; if(p.role==='team'&&!p.d) p.d=99; buildReview(); buildPrefs(); return; }
-  if(f==='g') buildPrefs();
-});
-$('#confirmReview').addEventListener('click',()=>{
-  const unknown=people.filter(p=>p.g!=='M'&&p.g!=='F'&&p.d>0);
-  if(unknown.length){toast(`Set a gender for ${unknown.map(p=>p.name).slice(0,3).join(', ')}${unknown.length>3?'...':''} before pairing. Duets are matched by gender.`);return}
-  $('#p2').hidden=false;$('#p3').hidden=true;$('#again').hidden=true;$('#shuffleResult').hidden=true;result=null;
-  $('#p2').scrollIntoView({behavior:smooth(),block:'start'});
-});
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function load() { try { const d = localStorage.getItem(KEY); if (d) S = Object.assign(S, JSON.parse(d)); } catch (e) {} }
+function snap() { history.push(JSON.stringify(S)); if (history.length > 200) history.shift(); }
+function spent(c) { return S.sold.filter(s => s.team === c).reduce((a, s) => a + s.price, 0); }
+function left(c) { return teamByCode[c].purse - spent(c); }
+function msg(t) { document.getElementById('msg').textContent = t || ''; }
+const $ = id => document.getElementById(id);
+const cur = () => playerByName[S.singer];
+const isSold = n => S.sold.some(s => s.singer === n && s.team);
+const wasUnsold = n => S.sold.some(s => s.singer === n && !s.team);
+const findPlayer = txt => { const t = txt.trim().toLowerCase(); return PLAYERS.find(p => p.name.toLowerCase() === t); };
 
-/* ---------- preferences ---------- */
-function nameOpts(sel){
-  const order=people.map((p,i)=>i).sort((a,b)=>people[a].name.localeCompare(people[b].name));
-  return '<option value="">Choose a singer</option>'+order.map(i=>{const p=people[i];
-    return `<option value="${i}" ${String(i)===String(sel)?'selected':''}>${esc(p.name)} (${p.g==='U'?'?':p.g}${p.role==='team'?', team':''})</option>`}).join('');
-}
-function buildPrefs(){
-  const a=$('#prefA').value, b=$('#prefB').value;
-  $('#prefA').innerHTML=nameOpts(a); $('#prefB').innerHTML=nameOpts(b);
-  $('#prefList').innerHTML=prefs.map((r,k)=>`<li class="${r.rel==='with'?'yes':'no'}"><span><b>${esc(people[r.a].name)}</b> ${r.rel==='with'?'pair with':'don\u2019t pair with'} <b>${esc(people[r.b].name)}</b></span><button class="x" data-k="${k}" aria-label="Remove this preference">×</button></li>`).join('');
-}
-$('#prefAdd').addEventListener('click',()=>{
-  const av=$('#prefA').value, bv=$('#prefB').value, rel=$('#prefRel').value;
-  if(av===''||bv===''){toast('Pick a singer on both sides.');return}
-  const a=+av,b=+bv;
-  if(a===b){toast('Pick two different singers.');return}
-  const A=people[a],B=people[b];
-  if(rel==='with'){
-    if(!crossGender(people,a,b)){toast(`${A.name} and ${B.name} aren\u2019t marked opposite gender. Duets are M and F only, so fix the gender first.`);return}
-    if(A.role==='reg'&&!A.d){toast(`${A.name} didn\u2019t ask for any duets. Set a duet count first.`);return}
-    if(B.role==='reg'&&!B.d){toast(`${B.name} didn\u2019t ask for any duets. Set a duet count first.`);return}
-  }
-  const same=prefs.findIndex(r=>(r.a===a&&r.b===b)||(r.a===b&&r.b===a));
-  if(same>=0){ if(prefs[same].rel!==rel) toast('Replaced the earlier preference for these two.'); prefs.splice(same,1); }
-  prefs.push({a,b,rel});
-  $('#prefA').value='';$('#prefB').value='';
-  buildPrefs();
-});
-$('#prefList').addEventListener('click',e=>{const x=e.target.closest('.x');if(!x)return;prefs.splice(+x.dataset.k,1);buildPrefs()});
+function catCount(c, cat) { return S.sold.filter(s => s.team === c && s.cat === cat).length + (teamByCode[c].capCat === cat ? 1 : 0); }
+function isFull(c, cat) { return catCount(c, cat) >= LIMIT[cat]; }
 
-/* ---------- file & paste loading ---------- */
-function teamCountVal(){return Math.max(0,Math.min(20,num($('#teamCount').value)))}
-$('#usePaste').addEventListener('click',()=>{
-  const txt=$('#paste').value.trim(); if(!txt){toast('Paste some rows first.');return}
-  const delim=txt.includes('\t')?'\t':',';
-  loadPeople(fromRows(txt.split(/\r?\n/).map(l=>l.split(delim)),teamCountVal()));
-});
-/* ---------- pairing engine (generic: explicit compat matrix + need array) ---------- */
-function pairGeneric(n,C,need,r){
-  const rem=need.slice(), used=new Set(), pairs=[];
-  const key=(a,b)=>a<b?a*n+b:b*n+a;
-  const avail=i=>{const o=[];for(let j=0;j<n;j++)if(rem[j]>0&&C[i][j]&&!used.has(key(i,j)))o.push(j);return o};
-  for(;;){
-    let bi=-1,bs=null,bav=null;
-    for(let i=0;i<n;i++){
-      if(rem[i]<=0) continue;
-      const av=avail(i); if(!av.length) continue;
-      const s=[rem[i],-av.length,r()];
-      if(!bs||cmp(s,bs)>0){bi=i;bs=s;bav=av}
-    }
-    if(bi<0) break;
-    let bj=-1,js=null;
-    for(const j of bav){const s=[rem[j],-avail(j).length,r()];if(!js||cmp(s,js)>0){bj=j;js=s}}
-    used.add(key(bi,bj));pairs.push([bi,bj]);rem[bi]--;rem[bj]--;
-  }
-  let changed=true,guard=0;
-  while(changed&&guard++<500){
-    changed=false;
-    const needy=[];for(let i=0;i<n;i++)if(rem[i]>0)needy.push(i);
-    outer:
-    for(let a=0;a<needy.length;a++)for(let b=a;b<needy.length;b++){
-      const u=needy[a],v=needy[b]; if(u===v&&rem[u]<2) continue;
-      for(let k=0;k<pairs.length;k++){
-        const [x,y]=pairs[k];
-        for(const [p,q] of [[x,y],[y,x]]){
-          if(u===p||v===q) continue;
-          if(!C[u][p]||!C[v][q]) continue;
-          if(used.has(key(u,p))||used.has(key(v,q))) continue;
-          if(key(u,p)===key(v,q)) continue;
-          used.delete(key(x,y));pairs.splice(k,1);
-          used.add(key(u,p));used.add(key(v,q));pairs.push([u,p],[v,q]);
-          rem[u]--;rem[v]--;changed=true;break outer;
-        }
-      }
-    }
-  }
-  return {pairs,rem};
-}
-function solveGeneric(n,C,need,seed){
-  const total=need.reduce((a,x)=>a+x,0)||1;
-  const runs=Math.max(6,Math.min(200,Math.floor(2e7/((n*n+1)*total))));
-  const r=rng(seed);
-  let best=null;
-  for(let t=0;t<runs;t++){
-    const res=pairGeneric(n,C,need,r);
-    const unfilled=res.rem.reduce((a,x)=>a+Math.max(0,x),0), sq=res.rem.reduce((a,x)=>a+x*x,0);
-    const sc=[-unfilled,-sq];
-    if(!best||cmp(sc,best.sc)>0) best={...res,sc,unfilled};
-    if(unfilled===0) break;
-  }
-  return best;
-}
-function crossGender(P,i,j){return (P[i].g==='M'&&P[j].g==='F')||(P[i].g==='F'&&P[j].g==='M')}
-function solveTwoPhase(P,seed){
-  const n=P.length, r=rng(seed^0x9e3779b9);
-  const key=(a,b)=>a<b?a*n+b:b*n+a;
-  const blocked=new Set(prefs.filter(x=>x.rel==='not').map(x=>key(x.a,x.b)));
-  const ok=(i,j)=>i!==j&&crossGender(P,i,j)&&!blocked.has(key(i,j));
-  const cap=P.map(p=>p.role==='reg'?p.d:Infinity);   // team: no upper limit
-  const pre=[], preSet=new Set(), preKind={}, prefNotes=[];
-  const count=P.map(()=>0);
-  const add=(i,j,kind)=>{pre.push([i,j]);preSet.add(key(i,j));preKind[key(i,j)]=kind;count[i]++;count[j]++;};
-
-  // Phase 0a: "pair with" requests
-  prefs.filter(x=>x.rel==='with').forEach(x=>{
-    const A=P[x.a],B=P[x.b];
-    let why='';
-    if(!crossGender(P,x.a,x.b)) why='they aren\u2019t marked opposite gender';
-    else if(preSet.has(key(x.a,x.b))) why='';
-    else if(count[x.a]>=cap[x.a]) why=`${A.name} has no duets left (asked for ${A.d})`;
-    else if(count[x.b]>=cap[x.b]) why=`${B.name} has no duets left (asked for ${B.d})`;
-    if(why) prefNotes.push(`Couldn\u2019t pair ${A.name} with ${B.name}: ${why}.`);
-    else if(!preSet.has(key(x.a,x.b))) add(x.a,x.b,'req');
-  });
-
-  // Phase 0b: every team member gets at least TEAM_MIN duets
-  const TEAM_MIN=2;
-  const teamIdx=P.map((p,i)=>i).filter(i=>P[i].role==='team');
-  const regOpts=t=>P.map((p,j)=>j).filter(j=>P[j].role==='reg'&&ok(t,j)&&!preSet.has(key(t,j))&&count[j]<cap[j]);
-  const stuck=new Set();
-  for(let round=1;round<=TEAM_MIN;round++){
-    teamIdx.filter(t=>count[t]<round&&!stuck.has(t)).sort((a,b)=>regOpts(a).length-regOpts(b).length||r()-.5).forEach(t=>{
-      if(count[t]>=round) return;
-      const opts=regOpts(t);
-      if(!opts.length){stuck.add(t);return}
-      // take from the registrant with the most duets still open, so no one loses much
-      let best=opts[0],bs=null;
-      for(const j of opts){const sc=[cap[j]-count[j],r()];if(!bs||cmp(sc,bs)>0){best=j;bs=sc}}
-      add(t,best,'teammin');
-    });
-  }
-  stuck.forEach(t=>{
-    prefNotes.push(P[t].g==='U'
-      ? `${P[t].name} (team) has no duets because their gender isn\u2019t set.`
-      : `${P[t].name} (team) only has ${count[t]} of ${TEAM_MIN} duets: no other opposite-gender registrant had a duet to spare.`);
-  });
-
-  // Phase 1: registrants with each other
-  const Creg=Array.from({length:n},(_,i)=>P.map((_,j)=>P[i].role==='reg'&&P[j].role==='reg'&&ok(i,j)&&!preSet.has(key(i,j))));
-  const need1=P.map((p,i)=>p.role==='reg'?Math.max(0,p.d-count[i]):0);
-  const r1=solveGeneric(n,Creg,need1,seed);
-
-  // Phase 2: anyone still short gets a team member
-  const taken=new Set([...preSet,...r1.pairs.map(([a,b])=>key(a,b))]);
-  const Cteam=Array.from({length:n},(_,i)=>P.map((_,j)=>((P[i].role==='team')!==(P[j].role==='team'))&&ok(i,j)&&!taken.has(key(i,j))));
-  const need2=P.map((p,i)=>p.role==='reg'?r1.rem[i]:(p.d===99?999:Math.max(0,p.d-count[i])));
-  const r2=solveGeneric(n,Cteam,need2,seed+7);
-
-  const pairs=pre.concat(r1.pairs,r2.pairs);
-  const kind=pairs.map(([a,b])=>preKind[key(a,b)]||'');
-  const rem=P.map((p,i)=>p.role==='reg'?r2.rem[i]:0);
-  const unfilled=rem.reduce((a,x)=>a+Math.max(0,x),0);
-  const why=P.map((p,i)=>{
-    if(p.role!=='reg'||rem[i]<=0) return '';
-    if(p.g!=='M'&&p.g!=='F') return 'Gender isn\u2019t set, so no opposite-gender partner can be matched.';
-    const all=P.reduce((a,q,j)=>a+(crossGender(P,i,j)?1:0),0);
-    const allowed=P.reduce((a,q,j)=>a+(ok(i,j)?1:0),0);
-    if(all===0) return 'No opposite-gender registrants or team members at all.';
-    if(allowed<all&&allowed===0) return 'Every opposite-gender singer is on a don\u2019t pair with list.';
-    return 'Every opposite-gender registrant and team member they can sing with is already fully booked.';
-  });
-  return {pairs,kind,rem,unfilled,why,prefNotes};
-}
-
-/* ---------- rounds ---------- */
-// Round 1: every solo. Rounds 2 and 3: each singer's duets split as evenly as possible.
-// Duets are always M-F, so walking alternating trails through the pairs and
-// flipping rounds at each step balances every singer exactly (an odd number of
-// duets ends up as one extra in one round).
-function splitDuets(n,pairs){
-  const adj=Array.from({length:n},()=>[]);
-  pairs.forEach(([a,b],k)=>{adj[a].push(k);adj[b].push(k)});
-  const round=pairs.map(()=>0), ptr=new Array(n).fill(0), left=adj.map(l=>l.length), size={2:0,3:0};
-  const next=v=>{while(ptr[v]<adj[v].length&&round[adj[v][ptr[v]]])ptr[v]++;return ptr[v]<adj[v].length?adj[v][ptr[v]]:-1};
-  const walk=start=>{
-    let v=start, c=size[2]<=size[3]?2:3;   // start in the shorter round to keep 2 and 3 similar in length
-    for(;;){
-      const k=next(v); if(k<0) break;
-      round[k]=c; size[c]++; left[pairs[k][0]]--; left[pairs[k][1]]--;
-      v=pairs[k][0]===v?pairs[k][1]:pairs[k][0]; c=c===2?3:2;
-    }
-  };
-  for(let v=0;v<n;v++) if(left[v]%2===1) walk(v);
-  for(let v=0;v<n;v++) while(left[v]>0) walk(v);
-  return round;
-}
-// Running order inside a round: nobody sings twice in a row if it can be avoided
-// (also across the boundary between rounds). Busiest singers are placed first.
-function sequence(items,last){
-  const rest=items.slice(), out=[], load={};
-  items.forEach(it=>it.forEach(i=>load[i]=(load[i]||0)+1));
-  let prev=new Set(last), clashes=0;
-  while(rest.length){
-    let bi=-1,bs=null;
-    rest.forEach((it,k)=>{
-      const s=[it.some(i=>prev.has(i))?0:1, it.reduce((a,i)=>a+load[i],0)];
-      if(!bs||cmp(s,bs)>0){bi=k;bs=s}
-    });
-    const it=rest.splice(bi,1)[0], b2b=it.some(i=>prev.has(i));
-    if(b2b) clashes++;
-    out.push({who:it,b2b}); it.forEach(i=>load[i]--); prev=new Set(it);
-  }
-  return {acts:out,last:[...prev],clashes};
-}
-function buildRounds(P,pairs){
-  const rd=splitDuets(P.length,pairs);
-  const solos=[]; P.forEach((p,i)=>{for(let k=0;k<p.s;k++) solos.push([i])});
-  const orient=([a,b])=>(P[a].g==='F'&&P[b].g==='M')?[b,a]:[a,b];   // male singer first, like the manual sheet
-  const r2=pairs.filter((_,k)=>rd[k]===2).map(orient), r3=pairs.filter((_,k)=>rd[k]===3).map(orient);
-  const per=P.map(()=>[0,0,0]);
-  solos.forEach(([i])=>per[i][0]++);
-  r2.forEach(p=>p.forEach(i=>per[i][1]++)); r3.forEach(p=>p.forEach(i=>per[i][2]++));
-  let last=[], clashes=0;
-  const rounds=[['Round 1 (Solo)',solos],['Round 2',r2],['Round 3',r3]].map(([label,items])=>{
-    const s=sequence(items,last); last=s.last; clashes+=s.clashes; return {label,acts:s.acts};
-  });
-  return {rounds,clashes,per};
-}
-function actName(who){return who.map(i=>people[i].name).join('<> ')}
-
-let seed=20261009;
-function run(reshuffle){
-  if(!people.length) return;
-  if(reshuffle) seed=(Date.now()^Math.floor(Math.random()*1e9))>>>0;
-  $('#go').disabled=true;$('#goHint').textContent='Pairing…';
-  setTimeout(()=>{
-    result=solveTwoPhase(people,seed);
-    result.rounds=buildRounds(people,result.pairs);
-    $('#go').disabled=false;$('#goHint').textContent='';$('#again').hidden=false;$('#shuffleResult').hidden=false;
-    $('#p3').hidden=false;render();
-    if(reshuffle) toast('Reshuffled');
-    else $('#p3').scrollIntoView({behavior:smooth(),block:'start'});
-  },30);
-}
-$('#go').addEventListener('click',()=>run(false));
-$('#again').addEventListener('click',()=>run(true));
-$('#shuffleResult').addEventListener('click',()=>run(true));
-
-/* ---------- rendering ---------- */
-function partnersOf(i){return result.pairs.filter(p=>p[0]===i||p[1]===i).map(p=>p[0]===i?p[1]:p[0])}
-function voice(i){const p=people[i];return `<span class="voice ${p.g} ${p.role==='team'?'team':''}" title="${esc(p.name)}${p.role==='team'?' (team)':''}">${esc(p.name)}</span>`}
-function render(){
-  const P=people,R=result;
-  const regs=P.filter(p=>p.role==='reg');
-  const req=regs.reduce((a,p)=>a+p.d,0), short=P.filter((p,i)=>p.role==='reg'&&R.rem[i]>0).length;
-  const solos=P.reduce((a,p)=>a+p.s,0);
-  const teamAll=P.filter(p=>p.role==='team').length, teamIn=P.filter((p,i)=>p.role==='team'&&partnersOf(i).length>=2).length, teamNone=teamIn<teamAll;
-  const prefWith=prefs.filter(x=>x.rel==='with').length, prefHit=R.kind.filter(k=>k==='req').length;
-  $('#resultLede').textContent=R.unfilled===0?'Every duet request is filled, opposite-gender only, with nobody repeated as a partner.':
-    `${R.unfilled} duet ${R.unfilled===1?'slot is':'slots are'} still open across ${short} ${short===1?'person':'people'}. The Singers tab shows who and why.`;
-  $('#summary').innerHTML=`
-    <div><b>${R.pairs.length}</b>duets formed</div>
-    <div><b>${solos}</b>solos</div>
-    <div><b>${R.pairs.length+solos}</b>acts in total</div>
-    <div class="${R.unfilled?'bad':'good'}"><b>${req-R.unfilled}/${req}</b>duet slots filled</div>
-    <div class="${teamNone?'bad':'good'}"><b>${teamIn}/${teamAll}</b>team members with 2+ duets</div>${prefWith?`
-    <div class="${prefHit<prefWith?'bad':'good'}"><b>${prefHit}/${prefWith}</b>requested pairs</div>`:''}`;
-  $('#prefNotes').innerHTML=R.prefNotes.map(x=>`<div class="note">${esc(x)}</div>`).join('');
-  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.tab===tab)));
-  $('#shortWrap').hidden=tab!=='singers';
-  const q=$('#q').value.trim().toLowerCase();
-  const hit=i=>!q||P[i].name.toLowerCase().includes(q);
-  let h='';
-  if(tab==='duets'){
-    const list=R.pairs.map((p,i)=>({p,i})).filter(o=>hit(o.p[0])||hit(o.p[1]));
-    h=list.length?`<div class="duets">${list.map(({p,i})=>{
-      const a=P[p[0]],b=P[p[1]], teamSide=(a.role==='team'||b.role==='team');
-      const tag=R.kind[i]==='req'?'requested':(teamSide?'with team':'');
-      return `<div class="duet"><span class="no">${i+1}</span><div class="pair">${voice(p[0])}<span class="link" aria-label="with"></span>${voice(p[1])}</div><span class="tag">${tag}</span></div>`}).join('')}</div>`
-      :`<div class="empty-state">${R.pairs.length?'No duet matches that name.':'Nobody asked for a duet.'}</div>`;
-  }else if(tab==='rounds'){
-    const RR=R.rounds;
-    const top=`<p class="hint" style="margin:0 0 1rem">All solos are in Round 1. Each singer's duets are split evenly between Rounds 2 and 3. ${RR.clashes?`<span class="why">${RR.clashes} spot${RR.clashes===1?'':'s'} where someone sings twice in a row could not be avoided (marked below).</span>`:'Nobody sings twice in a row.'}</p>`;
-    let slot=0;
-    h=top+RR.rounds.map(rd=>{
-      const acts=rd.acts.map(a=>({a,no:++slot})).filter(o=>o.a.who.some(hit));
-      return `<h3 class="round-h">🔁 ${esc(rd.label)} <span class="hint">${rd.acts.length} ${rd.label.includes('Solo')?'solo':'duet'}${rd.acts.length===1?'':'s'}</span></h3>`+
-        (acts.length?`<div class="duets">${acts.map(({a,no})=>`<div class="duet"><span class="no">${no}</span><div class="pair">${a.who.length===1?voice(a.who[0]):`${voice(a.who[0])}<span class="link" aria-label="with"></span>${voice(a.who[1])}`}</div><span class="tag">${a.b2b?'<span class="why">back to back</span>':''}</span></div>`).join('')}</div>`
-        :`<div class="empty-state">${rd.acts.length?'No act in this round matches that name.':'Nothing in this round.'}</div>`);
+function fillTeamSelect(sel, val, other) {
+  const p = cur();
+  sel.innerHTML = '<option value="">— select team —</option>' +
+    TEAMS.map(t => {
+      const full = p && isFull(t.code, p.cat) && t.code !== val;
+      return `<option value="${t.code}" ${t.code === val ? 'selected' : ''} ${t.code === other || full ? 'disabled' : ''}>${t.code} – ${t.name}${full ? ' (' + CAT_LABEL[p.cat] + ' full)' : ''}</option>`;
     }).join('');
-  }else if(tab==='singers'){
-    const only=$('#onlyShort').checked;
-    const rows=P.map((p,i)=>({p,i})).filter(o=>hit(o.i)&&(!only||(o.p.role==='reg'&&R.rem[o.i]>0)));
-    h=rows.length?`<div class="tablewrap"><table><thead><tr><th>#</th><th>Singer</th><th>Role</th><th>Duets</th><th>Paired with</th><th>Solos</th><th>R1 / R2 / R3</th></tr></thead><tbody>${rows.map(({p,i})=>{
-      const isReg=p.role==='reg';
-      const got=isReg?p.d-R.rem[i]:partnersOf(i).length;
-      const shortRow=isReg&&R.rem[i]>0;
-      const dots=(isReg&&p.d)?`<span class="dots" aria-hidden="true">${'<span class="dot"></span>'.repeat(got)}${'<span class="dot empty"></span>'.repeat(Math.max(0,R.rem[i]))}</span>`:'';
-      return `<tr class="${shortRow?'short':''}"><td>${esc(p.sno)}</td><td style="white-space:nowrap"><span class="g ${p.g}">${p.g==='U'?'?':p.g}</span> ${esc(p.name)}</td><td>${isReg?'Registrant':'<span class="pill">Team</span>'}</td>
-      <td style="white-space:nowrap">${dots}${isReg?`${got}/${p.d}`:`${got} (flexible)`}${shortRow?`<div class="why" style="white-space:normal">${esc(R.why[i])}</div>`:''}</td>
-      <td class="partners">${partnersOf(i).map(j=>esc(P[j].name)).join(', ')||'None'}</td><td>${p.s||'0'}</td><td style="white-space:nowrap">${R.rounds.per[i].join(' / ')}</td></tr>`}).join('')}</tbody></table></div>`
-      :`<div class="empty-state">${only?'Nobody is short on duets.':'No singer matches that name.'}</div>`;
+}
+
+function render() {
+  const live = S.price != null;
+  const p = cur();
+
+  // singer name box + suggestions (players not yet sold to a team)
+  const pool = PLAYERS.filter(x => !isSold(x.name));
+  $('singerList').innerHTML = pool.map(x => `<option value="${x.name}">`).join('');
+  if (document.activeElement !== $('singerName')) $('singerName').value = S.typed;
+  $('singerName').disabled = live;
+  const again = pool.filter(x => wasUnsold(x.name)).length;
+  $('poolInfo').textContent = `Sold ${PLAYERS.length - pool.length} of ${PLAYERS.length} · Remaining ${pool.length}` + (again ? ` (unsold earlier: ${again})` : '');
+
+  $('catBox').textContent = p ? CAT_LABEL[p.cat] : '—';
+  $('baseBox').textContent = p ? fmt(p.base) : '—';
+  $('idBox').textContent = p ? p.id : '—';
+
+  fillTeamSelect($('slot0'), S.slots[0], S.slots[1]);
+  fillTeamSelect($('slot1'), S.slots[1], S.slots[0]);
+  [0, 1].forEach(i => {
+    $('slot' + i).disabled = live && S.holder === i;
+    $('slot' + i + 'box').className = 'slot' + (live && S.holder === i ? ' holder' : '');
+    $('slot' + i + 'left').textContent = S.slots[i] ? 'Purse left: ' + fmt(left(S.slots[i])) : '';
+  });
+
+  $('priceLabel').textContent = live ? 'Current bid' : 'Opening bid';
+  $('livePrice').textContent = live ? fmt(S.price) : (p ? fmt(p.base) : '—');
+  $('liveHolder').textContent = live ? S.slots[S.holder] : '—';
+  $('liveNext').textContent = live ? fmt(nextPrice(S.price)) : '—';
+  $('nextBtn').textContent = live ? 'Next bid' : 'Start bid';
+
+  // bid history
+  $('bidTable').querySelector('tbody').innerHTML = S.bids.map((b, i) =>
+    `<tr class="${i === S.bids.length - 1 ? 'holder' : ''}"><td>${i + 1}</td><td class="num">${num(b.price)}</td>
+     <td>${b.slot === 0 ? b.team : ''}</td><td>${b.slot === 1 ? b.team : ''}</td></tr>`).join('');
+
+  // ladder: from this singer's base price up to the largest auction purse
+  let lp = p ? p.base : 15000, rows = '';
+  const limit = Math.max(...TEAMS.map(t => t.purse));
+  while (lp <= limit) {
+    rows += `<tr class="${lp === S.price ? 'holder' : ''}"><td class="num">${num(lp)}</td><td class="num">+${num(step(lp))}</td></tr>`;
+    lp = nextPrice(lp);
   }
-  $('#view').innerHTML=h;
-}
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{tab=t.dataset.tab;render()}));
-$('#q').addEventListener('input',()=>result&&render());
-$('#onlyShort').addEventListener('change',()=>result&&render());
+  $('ladder').querySelector('tbody').innerHTML = rows;
+  const curRow = $('ladder').querySelector('tr.holder');
+  if (curRow) curRow.scrollIntoView({ block: 'nearest' });
 
-/* ---------- export ---------- */
-function workbookBlob(sheets){
-  const wb=XLSX.utils.book_new();
-  sheets.forEach(([name,rows])=>{
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=rows[0].map((_,c)=>({wch:Math.min(40,Math.max(8,...rows.map(r=>String(r[c]??'').length+2)))}));
-    XLSX.utils.book_append_sheet(wb,ws,name);
-  });
-  return new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})]);
+  // team summary
+  $('teamTable').querySelector('tbody').innerHTML = TEAMS.map(t => {
+    const mine = S.sold.filter(s => s.team === t.code);
+    const c = k => catCount(t.code, k);
+    return `<tr><td><b>${t.code}</b></td><td>${t.captain}</td>
+      <td class="num ${c('A') >= LIMIT.A ? 'unsold' : ''}">${c('A')}/${LIMIT.A}</td><td class="num ${c('B') >= LIMIT.B ? 'unsold' : ''}">${c('B')}/${LIMIT.B}</td><td class="num">${mine.length}</td>
+      <td class="num">${num(t.purse)}</td><td class="num">${num(spent(t.code))}</td><td class="num"><b>${num(left(t.code))}</b></td></tr>`;
+  }).join('');
+
+  // sold log (latest first)
+  $('soldTable').querySelector('tbody').innerHTML = S.sold.map((s, i) => {
+    const pl = playerByName[s.singer] || {};
+    return `<tr><td>${i + 1}</td><td>${s.singer}</td><td>${pl.id || ''}</td><td>${CAT_LABEL[s.cat]}</td><td>${pl.country || ''}</td><td class="num">${pl.base ? num(pl.base) : ''}</td>
+      <td class="${s.team ? '' : 'unsold'}">${s.team || 'UNSOLD'}</td><td class="num">${s.team ? num(s.price) : '—'}</td></tr>`;
+  }).reverse().join('');
+
+  save();
+  pushLive();
 }
-async function save(filename,blob){
-  if(downloads){
-    try{await downloads.save({filename,data:blob});toast('Saved '+filename);return}
-    catch(e){if(e&&e.code==='declined')return;}
+
+function doNext() {
+  msg('');
+  const p = cur();
+  if (S.price == null) {
+    if (!p) return msg(S.typed.trim() ? 'Name not found in the player list — pick it from the suggestions.' : 'Enter the singer name first.');
+    if (isSold(p.name)) return msg(p.name + ' is already sold.');
+    if (!S.slots[0]) return msg('Pick the team opening the bid in Team 1.');
+    if (isFull(S.slots[0], p.cat)) return msg(S.slots[0] + ' already has ' + LIMIT[p.cat] + ' ' + CAT_LABEL[p.cat] + ' players — cannot bid.');
+    if (p.base > left(S.slots[0])) return msg(S.slots[0] + ' does not have enough purse left for ' + fmt(p.base) + '.');
+    snap();
+    S.price = p.base; S.holder = 0;
+    S.bids = [{ price: S.price, team: S.slots[0], slot: 0 }];
+  } else {
+    const other = 1 - S.holder;
+    if (!S.slots[other]) return msg('Pick the challenging team in Team ' + (other + 1) + '.');
+    if (S.slots[other] === S.slots[S.holder]) return msg('Both slots have the same team.');
+    if (isFull(S.slots[other], p.cat)) return msg(S.slots[other] + ' already has ' + LIMIT[p.cat] + ' ' + CAT_LABEL[p.cat] + ' players — cannot bid.');
+    if (nextPrice(S.price) > left(S.slots[other])) return msg(S.slots[other] + ' does not have enough purse left for ' + fmt(nextPrice(S.price)) + '.');
+    snap();
+    S.price = nextPrice(S.price); S.holder = other;
+    S.bids.push({ price: S.price, team: S.slots[other], slot: other });
   }
-  try{
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url),2000);
-    toast('Saved '+filename);
-  }catch(e){toast('That file could not be saved here.')}
+  render();
 }
-$('#export').addEventListener('click',()=>{
-  if(!result||typeof XLSX==='undefined') return;
-  const P=people,R=result;
-  const duets=[['Duet #','Singer 1','Gender','Singer 2','Gender','Note']].concat(R.pairs.map((p,i)=>[i+1,P[p[0]].name,P[p[0]].g,P[p[1]].name,P[p[1]].g,R.kind[i]==='req'?'Requested pair':((P[p[0]].role==='team'||P[p[1]].role==='team')?'With team member':'')]));
-  const singers=[['S.No','Name','Gender','Role','Duets requested','Duets assigned','Paired with','Solos','Note']].concat(P.map((p,i)=>[p.sno,p.name,p.g,p.role==='reg'?'Registrant':'Team',p.role==='reg'?p.d:'',p.role==='reg'?p.d-R.rem[i]:partnersOf(i).length,partnersOf(i).map(j=>P[j].name).join(', '),p.s,R.why[i]]));
-  // Rounds tab, same layout as the manual sheet: round header, then one row per act, SONG left blank to fill in
-  const rounds=[];
-  R.rounds.rounds.forEach((rd,k)=>{
-    if(k) rounds.push(['','']);
-    rounds.push(['🔁 '+rd.label,'SONG']);
-    rd.acts.forEach(a=>rounds.push([actName(a.who),'']));
-  });
-  singers[0].push('Round 1','Round 2','Round 3');
-  P.forEach((p,i)=>singers[i+1].push(...R.rounds.per[i]));
-  const sheets=[['Rounds',rounds],['Duets',duets],['Singers',singers]];
-  if(prefs.length) sheets.push(['Preferences',[['Singer','Preference','Singer']].concat(prefs.map(x=>[P[x.a].name,x.rel==='with'?'Pair with':'Don\u2019t pair with',P[x.b].name]))]);
-  save('jamalong-pairings.xlsx',workbookBlob(sheets));
+
+function clearBlock() { S.price = null; S.holder = null; S.bids = []; S.slots = ['', '']; S.singer = ''; S.typed = ''; $('singerName').value = ''; }
+
+function doSold() {
+  msg('');
+  if (S.price == null) return msg('No bid yet.');
+  snap();
+  const e = { id: 'L' + Date.now(), time: new Date().toISOString(), singer: S.singer, cat: cur().cat, team: S.slots[S.holder], price: S.price, bids: S.bids.map(b => ({ team: b.team, price: b.price })) };
+  S.sold.push(e); queue({ action: 'add', rec: recOf(e) });
+  clearBlock(); render();
+}
+function doUnsold() {
+  msg('');
+  if (!cur()) return msg('No singer on the block.');
+  snap();
+  const e = { id: 'L' + Date.now(), time: new Date().toISOString(), singer: S.singer, cat: cur().cat, team: '', price: 0, bids: S.bids.map(b => ({ team: b.team, price: b.price })) };
+  S.sold.push(e); queue({ action: 'add', rec: recOf(e) });
+  clearBlock(); render();
+}
+function doUndo() {
+  msg('');
+  if (!history.length) return msg('Nothing to undo.');
+  const before = S.sold.map(x => x.id);
+  S = JSON.parse(history.pop()); $('singerName').value = S.typed; render();
+  const now = new Set(S.sold.map(x => x.id));
+  before.filter(id => id && !now.has(id)).forEach(id => queue({ action: 'delete', id }));
+}
+
+$('nextBtn').onclick = doNext;
+$('soldBtn').onclick = doSold;
+$('unsoldBtn').onclick = doUnsold;
+$('undoBtn').onclick = doUndo;
+$('singerName').oninput = e => {
+  S.typed = e.target.value;
+  const p = findPlayer(S.typed);
+  S.singer = p ? p.name : '';
+  msg(p && isSold(p.name) ? p.name + ' is already sold.' : '');
+  render();
+};
+$('singerName').onchange = e => { const p = findPlayer(e.target.value); if (p) { S.typed = p.name; e.target.value = p.name; render(); } };
+$('slot0').onchange = e => { snap(); S.slots[0] = e.target.value; render(); };
+$('slot1').onchange = e => { snap(); S.slots[1] = e.target.value; render(); };
+
+$('resetAuction').onclick = async () => {
+  if (S.price != null) return msg('Finish the current bid (Sold / Unsold) first.');
+  const typed = prompt('This deletes ALL auction results from the Google Sheet, for everyone, and resets the live page.\n\nType RESET to confirm.');
+  if (typed !== 'RESET') return msg('Reset cancelled.');
+  msg('Resetting…');
+  try {
+    const res = await fetch(syncUrl(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'reset' }) });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'sheet error');
+  } catch (e) { return msg('Reset failed — could not reach the Google Sheet. Nothing was changed.'); }
+  outbox = []; saveOutbox(); history = [];
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  location.reload();
+};
+$('reloadSheet').onclick = () => { if (S.price != null) return msg('Finish the current bid (Sold / Unsold) first.'); loadFromSheet(true); };
+document.addEventListener('keydown', e => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+  if (e.key === 'n' || e.key === 'N' || e.key === ' ') { e.preventDefault(); doNext(); }
+  if (e.key === 'u' || e.key === 'U') doUndo();
 });
 
-/* ---------- Rounds sheet (Drive format) ---------- */
-function ordinal(d){const t=d%100;if(t>=11&&t<=13)return d+'th';return d+({1:'st',2:'nd',3:'rd'}[d%10]||'th')}
-// Event name is built from the Place, Date and Time fields:
-// "Chennai Saligramam on - 15th Nov 2026 @1 pm (IST)"
-const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function iso(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
-(()=>{const d=new Date(); d.setDate(d.getDate()+((7-d.getDay())%7)); $('#evDate').value=iso(d)})();   // coming Sunday (today if it's Sunday)
-function eventName(){
-  const place=$('#evPlace').value.trim()||'Chennai Saligramam';
-  const [y,m,dd]=($('#evDate').value||iso(new Date())).split('-').map(Number);
-  let [h,mi]=($('#evTime').value||'13:00').split(':').map(Number);
-  const ap=h>=12?'pm':'am'; h=h%12||12;
-  return `${place} on - ${ordinal(dd)} ${MONTHS[m-1]} ${y} @${h}${mi?':'+String(mi).padStart(2,'0'):''} ${ap} (IST)`;
+// ---------- Google Sheet sync ----------
+const SYNC_KEY = 'ppl_sync_url', OUTBOX_KEY = 'ppl_outbox';
+let outbox = []; try { outbox = JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]'); } catch (e) {}
+let flushing = false, lastErr = '';
+function saveOutbox() { try { localStorage.setItem(OUTBOX_KEY, JSON.stringify(outbox)); } catch (e) {} }
+const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbyUO2pfXfY5aMkEQkxvJKol6Wc-2B3a6p5oyqYZ6Au0Ce1WohY0f2iQE5k-DYsawmJS/exec';
+function syncUrl() { return DEFAULT_SYNC_URL; }
+function recOf(e) {
+  const pl = playerByName[e.singer] || {}, t = teamByCode[e.team];
+  return { id: e.id, time: e.time, player: e.singer, memberId: pl.id || '', category: CAT_LABEL[e.cat], country: pl.country || '', base: pl.base || '',
+    status: e.team ? 'SOLD' : 'UNSOLD', team: e.team || '', captain: t ? t.captain : '',
+    price: e.team ? e.price : '', bids: e.bids || [] };
 }
-function defaultSheetName(){return eventName()}
-function syncEvent(){const n=eventName(); $('#sheetName').value=n; $('#evPreview').textContent=n}
-['#evPlace','#evDate','#evTime'].forEach(s=>$(s).addEventListener('input',syncEvent));
-syncEvent();
-// "Chennai Saligramam on - 1st Nov 2026 @1 pm (IST)" -> place, date, time for the heading rows
-function parseSheetName(s){
-  const m=s.match(/^\s*(.*?)\s+on\s*-\s*(.*?)\s*@\s*(.*?)\s*(\(IST\))?\s*$/i);
-  return m?{place:m[1],date:m[2],time:m[3]}:null;
+// ---------- live state for the public live page ----------
+function liveState() {
+  const p = cur(), t = c => teamByCode[c];
+  const base = x => ({ player: x.name, memberId: x.id, category: CAT_LABEL[x.cat], country: x.country, base: x.base });
+  if (S.price != null && p) {
+    const h = S.slots[S.holder];
+    return Object.assign(base(p), { status: 'LIVE', price: S.price, team: h, teamName: t(h).name, bids: S.bids.length });
+  }
+  if (p) return Object.assign(base(p), { status: 'UP NEXT', price: null, team: '', teamName: '' });
+  const last = S.sold[S.sold.length - 1];
+  if (last && playerByName[last.singer]) {
+    const x = playerByName[last.singer];
+    return Object.assign(base(x), last.team
+      ? { status: 'SOLD', price: last.price, team: last.team, teamName: t(last.team).name }
+      : { status: 'UNSOLD', price: null, team: '', teamName: '' });
+  }
+  return { status: 'WAITING' };
 }
-function roundsSheetBlob(name){
-  const P=people,R=result, info=parseSheetName(name);
-  const border={top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}}};
-  const font={name:'Arial',sz:10,color:{rgb:'000000'}};
-  const st={
-    title:{font:{...font,bold:true,sz:12},fill:{fgColor:{rgb:'FF9900'}},alignment:{horizontal:'center',vertical:'center'},border},
-    time:{font:{...font,bold:true},fill:{fgColor:{rgb:'FCE5CD'}},alignment:{horizontal:'center',vertical:'center'},border},
-    head:{font:{...font,bold:true},fill:{fgColor:{rgb:'FFFF00'}},alignment:{horizontal:'center',vertical:'center'},border},
-    cell:{font,alignment:{vertical:'center'},border},
-    act:{font:{...font,bold:true},fill:{fgColor:{rgb:'00FF00'}},alignment:{vertical:'center'},border}   // name + song cells
-  };
-  const rows=[], styles=[], merges=[];
-  const push=(vals,s)=>{rows.push(vals);styles.push(s)};
-  const title=info?`PP JAMMING - ${info.place.toUpperCase()} ${info.date}`:`PP JAMMING - ${name}`;
-  push([title,'','','',''],'title'); merges.push({s:{r:0,c:0},e:{r:0,c:4}});
-  push([`⏰ Time (${info?info.time.toUpperCase():''})`,'','','',''],'time'); merges.push({s:{r:1,c:0},e:{r:1,c:4}});
-  R.rounds.rounds.forEach((rd,k)=>{
-    push(['🔁 '+rd.label,'SONG','','','TRACK NAME'],'head');
-    rd.acts.forEach(a=>push([actName(a.who),'','','',''],'act'));
-    for(let b=0;b<(k===0?2:1)&&k<2;b++) push(['','','','',''],'cell');   // spacer rows like the Drive sheet
-  });
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  rows.forEach((r,ri)=>r.forEach((_,ci)=>{
-    const ref=XLSX.utils.encode_cell({r:ri,c:ci});
-    if(!ws[ref]) ws[ref]={t:'s',v:''};
-    ws[ref].s=(styles[ri]==='act'&&ci>1)?st.cell:st[styles[ri]];   // green only on name + song, like the Drive sheet
-    if(ri<2&&ci>0){ws[ref].t='z';delete ws[ref].v}                    // title + time rows: covered cells hold nothing, so the merge shows everywhere
-  }));
-  ws['!merges']=merges;
-  ws['!cols']=[{wch:28},{wch:32},{wch:6},{wch:10},{wch:30}];
-  ws['!rows']=rows.map((_,i)=>({hpt:i<2?22:18}));
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Rounds');
-  return new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array',sheetStubs:true})]);
+let liveSent = '', liveBusy = false, liveDirty = false;
+async function pushLive() {
+  const st = liveState(), key = JSON.stringify(st);
+  if (key === liveSent && !liveDirty) return;
+  if (liveBusy) { liveDirty = true; return; }
+  liveBusy = true; liveDirty = false;
+  try {
+    const res = await fetch(syncUrl(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'live', state: Object.assign({ ts: Date.now() }, st) }) });
+    const j = await res.json(); if (j.ok) liveSent = key;
+  } catch (e) { console.warn('live push failed', e); }
+  liveBusy = false;
+  if (liveDirty) { liveDirty = false; setTimeout(pushLive, 100); }   // a newer click happened while sending
 }
-// Copy the Rounds sheet as a formatted table: pasting into Excel for the web (SharePoint)
-// keeps the colours, bold text and merged heading rows, so no download or upload is needed.
-function roundsHTML(name){
-  const info=parseSheetName(name);
-  const b='border:1px solid #000;font-family:Arial;font-size:10pt;color:#000;';
-  const td=(v,css,extra='')=>`<td ${extra} style="${b}${css}">${esc(v)}</td>`;
-  const center='text-align:center;font-weight:bold;';
-  let h=`<table style="border-collapse:collapse"><colgroup><col width="200"><col width="230"><col width="45"><col width="70"><col width="215"></colgroup>`;
-  h+=`<tr>${td(info?`PP JAMMING - ${info.place.toUpperCase()} ${info.date}`:`PP JAMMING - ${name}`,center+'background:#FF9900;font-size:12pt;','colspan="5"')}</tr>`;
-  h+=`<tr>${td(`⏰ Time (${info?info.time.toUpperCase():''})`,center+'background:#FCE5CD;','colspan="5"')}</tr>`;
-  const blank=`<tr>${td('','')}${td('','')}${td('','')}${td('','')}${td('','')}</tr>`;
-  result.rounds.rounds.forEach((rd,k)=>{
-    const y=center+'background:#FFFF00;';
-    h+=`<tr>${td('🔁 '+rd.label,y)}${td('SONG',y)}${td('',y)}${td('',y)}${td('TRACK NAME',y)}</tr>`;
-    rd.acts.forEach(a=>{const g='font-weight:bold;background:#00FF00;';h+=`<tr>${td(actName(a.who),g)}${td('',g)}${td('','')}${td('','')}${td('','')}</tr>`});
-    if(k===0) h+=blank+blank; else if(k===1) h+=blank;
-  });
-  return h+'</table>';
-}
-function roundsTSV(name){
-  const info=parseSheetName(name), L=[];
-  L.push(info?`PP JAMMING - ${info.place.toUpperCase()} ${info.date}`:`PP JAMMING - ${name}`);
-  L.push(`⏰ Time (${info?info.time.toUpperCase():''})`);
-  result.rounds.rounds.forEach((rd,k)=>{
-    L.push(`🔁 ${rd.label}\tSONG\t\t\tTRACK NAME`);
-    rd.acts.forEach(a=>L.push(actName(a.who)));
-    if(k===0) L.push('',''); else if(k===1) L.push('');
-  });
-  return L.join('\n');
-}
-$('#copyRounds').addEventListener('click',async()=>{
-  if(!result) return;
-  const name=$('#sheetName').value.trim()||defaultSheetName(), html=roundsHTML(name), text=roundsTSV(name);
-  const done=()=>toast('Copied. Open the sheet, click cell A1 and paste.');
-  try{
-    await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);
-    return done();
-  }catch(e){}
-  // older browsers: select a hidden copy of the table and copy it
-  try{
-    const box=document.createElement('div'); box.contentEditable='true'; box.innerHTML=html;
-    box.style.cssText='position:fixed;left:-9999px;top:0'; document.body.appendChild(box);
-    const range=document.createRange(); range.selectNodeContents(box);
-    const sel=getSelection(); sel.removeAllRanges(); sel.addRange(range);
-    const ok=document.execCommand('copy'); sel.removeAllRanges(); box.remove();
-    ok?done():toast('Copy did not work here. Use Download Rounds sheet instead.');
-  }catch(e){toast('Copy did not work here. Use Download Rounds sheet instead.')}
-});
 
-/* ---------- send straight to the Google Sheet (PAIRING SHEET tab) ---------- */
-// Paste the web app URL from the Apps Script deployment here (ends in /exec).
-const SHEET_ENDPOINT='https://script.google.com/macros/s/AKfycbxrN-qTM6VG7bJ3IJsRpk8JRjq88061hW8AGCU_MpSqTUTiUkZ83EbCL2U0A2406LCd/exec';
-const SHEET_KEY='jamalong-2026';   // must match KEY in the Apps Script
-$('#sendSheet').addEventListener('click',async()=>{
-  if(!result) return;
-  if(!SHEET_ENDPOINT){toast('The Pairing Sheet link is not set up yet.');return}
-  const name=$('#sheetName').value.trim()||defaultSheetName(), info=parseSheetName(name);
-  const payload={key:SHEET_KEY,name,
-    title:info?`PP JAMMING - ${info.place.toUpperCase()} ${info.date}`:`PP JAMMING - ${name}`,
-    time:`⏰ Time (${info?info.time.toUpperCase():''})`,
-    rounds:result.rounds.rounds.map(rd=>({label:rd.label,acts:rd.acts.map(a=>actName(a.who))}))};
-  const btn=$('#sendSheet'); btn.disabled=true; btn.textContent='Sending…';
-  try{
-    const res=await fetch(SHEET_ENDPOINT,{method:'POST',body:JSON.stringify(payload)});   // plain-text body: no CORS preflight
-    const out=await res.json();
-    if(!out.ok) throw new Error(out.error||'failed');
-    $('#sentLink').href=out.url; $('#sentRow').hidden=false;
-    toast('Pairing Sheet updated');
-  }catch(e){toast('Could not reach the Pairing Sheet. Try again, or use Download.')}
-  finally{btn.disabled=false; btn.textContent='Send to Pairing Sheet'}
-});
+setInterval(() => { if (JSON.stringify(liveState()) !== liveSent) pushLive(); }, 5000);
 
-$('#exportRounds').addEventListener('click',()=>{
-  if(!result||typeof XLSX==='undefined') return;
-  let name=$('#sheetName').value.trim()||defaultSheetName();
-  const file=name.replace(/[\\/:*?"<>|]/g,'-').replace(/\s+/g,' ')+'.xlsx';
-  save(file,roundsSheetBlob(name));
-});
-
-/* ---------- capabilities ---------- */
-$('#export').hidden=false;
-if(window.claude&&typeof window.claude.use==='function'){
-  window.claude.use('downloads').then(d=>{downloads=d}).catch(()=>{});
+function queue(item) { outbox.push(item); saveOutbox(); flush(); }
+function syncStatus() { if (lastErr) console.warn('Sheet sync pending:', outbox.length, lastErr); }
+async function flush() {
+  const url = syncUrl();
+  if (!url || flushing || !outbox.length) return syncStatus();
+  flushing = true; syncStatus();
+  try {
+    while (outbox.length) {
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(outbox[0]) });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error || 'sheet error');
+      outbox.shift(); saveOutbox();
+    }
+    lastErr = '';
+  } catch (e) { lastErr = String(e.message || e); }
+  flushing = false; syncStatus();
 }
-})();
+setInterval(flush, 15000);
+
+// ---------- Google Sheet is the source of truth for sold / unsold ----------
+function parseBids(arr) {
+  return (arr || []).map(x => {
+    if (typeof x === 'object') return x;
+    const m = String(x).match(/^([A-Z]+)\s*[–-]\s*([\d,]+)/);
+    return m ? { team: m[1], price: Number(m[2].replace(/,/g, '')) } : null;
+  }).filter(Boolean);
+}
+function fromRow(r) {
+  const sold = r.status === 'SOLD';
+  return { id: r.id, time: r.time, singer: r.player, cat: playerByName[r.player].cat,
+    team: sold ? r.team : '', price: sold ? Number(String(r.price).replace(/,/g, '')) : 0, bids: parseBids(r.bids) };
+}
+const soldKey = arr => arr.map(x => x.id + '|' + x.team + '|' + x.price).join(';');
+let sheetLoading = false;
+async function loadFromSheet(force) {
+  if (sheetLoading || (!force && S.price != null)) return;
+  sheetLoading = true;
+  try {
+    const res = await fetch(syncUrl() + '?state&t=' + Date.now(), { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok || !Array.isArray(j.rows)) throw new Error(j.error || 'bad reply');
+    if (!force && S.price != null) return;          // a bid started while we were loading
+    let sold = j.rows.filter(r => playerByName[r.player]).map(fromRow);
+    const ids = new Set(sold.map(x => x.id));
+    outbox.forEach(o => {                            // include changes not yet saved to the sheet
+      if (o.action === 'add' && !ids.has(o.rec.id) && playerByName[o.rec.player]) { sold.push(fromRow(o.rec)); ids.add(o.rec.id); }
+      if (o.action === 'delete') sold = sold.filter(x => x.id !== o.id);
+    });
+    if (force || soldKey(sold) !== soldKey(S.sold)) {
+      S.sold = sold; history = []; render();
+    }
+    $('sheetInfo').textContent = 'Last loaded from sheet ' + new Date().toLocaleTimeString('en-IN');
+  } catch (e) {
+    $('sheetInfo').textContent = 'Could not reach the Google Sheet — showing what this browser has.';
+  } finally { sheetLoading = false; }
+}
+setInterval(() => loadFromSheet(false), 15000);
+
+load();
+if (S.singer && !playerByName[S.singer]) S.singer = '';
+if (!S.typed && S.singer) S.typed = S.singer;
+render(); flush(); loadFromSheet(false);
 </script>
 </body>
 </html>
